@@ -1,3 +1,7 @@
+# 3.9.5 — Aniversários por extenso
+
+- Em Pessoas, o aniversário mostra o mês por extenso (ex.: 7 de março).
+
 # 3.9.4 — Nome da app instalada
 
 - A app instalada passa a chamar-se só «Daily Casa» em todas as plataformas (computador, iOS e Android).

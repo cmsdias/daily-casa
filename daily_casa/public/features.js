@@ -344,7 +344,8 @@ function appearanceField(){const cur=window.casaThemePref?.()||'auto';const sel=
  return `<div class="field appearance-field"><div class="appearance-row"><div><span class="field-label" id="appearance-label">Aparência</span><small class="appearance-state" aria-live="polite">${sel[3]}</small></div><div class="theme-toggle" role="radiogroup" aria-labelledby="appearance-label" style="--i:${THEME_OPTS.indexOf(sel)}">${THEME_OPTS.map(([v,l,ic])=>`<button type="button" role="radio" aria-checked="${cur===v}" aria-label="${l}" title="${l}" data-action="theme-set" data-theme-value="${v}">${ico(ic)}</button>`).join('')}</div></div></div>`;}
 
 /* ───────────── Pessoas: contactos e edição pelo administrador ───────────── */
-const fmtBirthday=mmdd=>{const m=/^(\d{2})-(\d{2})$/.exec(mmdd||'');return m?`${Number(m[2])} ${MONTHS_PT[Number(m[1])-1]}`:'';};
+const MONTHS_LONG_PT=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+const fmtBirthday=mmdd=>{const m=/^(\d{2})-(\d{2})$/.exec(mmdd||'');return m?`${Number(m[2])} de ${MONTHS_LONG_PT[Number(m[1])-1]}`:'';};
 function personContacts(p){const bd=p.birthDate?p.birthDate.slice(5):p.birthday;const items=[];
  if(bd)items.push(`<span>${ico('cake')}${esc(fmtBirthday(bd))}</span>`);
  if(p.phone)items.push(`<a href="tel:${esc(p.phone.replace(/[^\d+]/g,''))}">${ico('phone')}${esc(p.phone)}</a>`);
