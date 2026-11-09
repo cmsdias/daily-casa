@@ -134,3 +134,5 @@ A aplicação pede acesso à API do Home Assistant (`homeassistant_api`) só par
 - Sem ligação, a app abre com os últimos dados guardados no dispositivo. Concluir tarefas e mexer nas compras fica em fila e é enviado quando a ligação voltar; as restantes alterações exigem ligação.
 - A aplicação não faz pedidos a serviços externos (a letra está incluída).
 - Pensada para uma casa (poucas pessoas em simultâneo). Os dados são gravados num único ficheiro JSON.
+
+**Enviar o acesso por email.** Em Pessoas, a quem tem conta criada com palavra-passe temporária e email, o administrador pode enviar uma ligação (uso único, 7 dias) para a pessoa escolher a palavra-passe definitiva e entrar. Reenviar invalida a ligação anterior; mudar o email ou repor a palavra-passe também.
