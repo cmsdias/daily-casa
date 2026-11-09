@@ -12,6 +12,7 @@ const {createIncidents}=require('./lib/incidents');
 const CORE=require('./public/house-core.js');
 const SEASONAL=require('./public/seasonal-defaults.js');
 const FIN=require('./public/finance-core.js');
+const {createQuotes}=require('./lib/quotes');const QUOTES=createQuotes();
 const UNITS=require('./public/shopping-units.js');
 function cleanUnit(v){const u=cleanStr(v,20);if(!u)return '';if(!UNITS.KEYS.includes(u))throw Error('Unidade inválida.');return u;}
 // Quantidade: número (vírgula decimal, ex.: «0,5») ou, por compatibilidade, texto livre das versões anteriores.
@@ -435,7 +436,12 @@ const server=http.createServer(async (req,res)=>{
       // Lançar as despesas fixas em falta antes de responder; só grava se algo mudou (uma leitura não deve mudar a revisão,
       // senão todos os dispositivos recarregariam sempre que alguém abre as Finanças).
       let changed=req.method!=='GET';try{if(FIN.generateRecurring(db.finance,dateInTz(new Date()),id))changed=true;}catch(e){console.error('Despesas fixas:',e.message);}
+      // 3.8: atualizar a cotação de um item agora.
+      const qm=p.match(/^\/api\/finance\/assets\/([^/]+)\/quote$/);
+      if(qm&&req.method==='POST'){FIN.migrate(db.finance);const a=db.finance.assets.find(x=>x.id===qm[1]&&!x.archived&&FIN.canSeeAsset(user,x));if(!a)return fail(res,404,'Item não encontrado.');if(!a.symbol)return fail(res,400,'Este item não tem símbolo.');await refreshQuote(a);save();if(a.quote?.error)return fail(res,502,a.quote.error);return send(res,200,{finance:FIN.view(db.finance,user,dateInTz(new Date()))});}
       let out;try{out=FIN.handle(db.finance,user,req.method,p,b,{newId:id,today:()=>dateInTz(new Date()),isAdmin:roleOf(user)==='admin'});}catch(e){return fail(res,e.status||400,e.message);}
+      // Item com símbolo criado ou alterado: vai logo buscar a cotação (o valor passa a vir dela).
+      if(out?.asset?.symbol&&out.asset.shares>0&&['POST','PATCH'].includes(req.method)&&(req.method==='POST'||'symbol'in b||'shares'in b||!out.asset.quote)){await refreshQuote(out.asset);changed=true;}
       if(out===undefined)return fail(res,404,'Rota não encontrada.');
       if(req.method!=='GET')logAction(user,'finance.'+(p.split('/')[3]||'view')+'.'+req.method.toLowerCase(),'');
       if(changed)save();return send(res,req.method==='POST'?201:200,out);
@@ -670,8 +676,20 @@ for(const sig of ['SIGTERM','SIGINT'])process.on(sig,()=>{console.log(`${sig} re
 try{const bk=backups.autoTick();if(bk)console.log('Cópia de segurança automática:',bk.name);}catch(e){console.error('Cópia automática falhou:',e.message);}
 // Os avisos diários (tarefas do dia, aniversários, calendário do mês) só saem a partir da hora do resumo diário (por omissão 08:30),
 // para as notificações no telemóvel não chegarem de madrugada.
+// Cotações: uma vez por dia, depois das 22:15 (fecho de Nova Iorque); se falhar, tenta de novo de hora a hora.
+function quoteSlot(){const d=dateInTz(new Date());return hhmmNow()>='22:15'?d:FIN_addDays(d,-1);}
+const FIN_addDays=(iso,n)=>new Date(Date.parse(iso+'T12:00:00Z')+n*86400000).toISOString().slice(0,10);
+const hhmmNow=()=>new Intl.DateTimeFormat('en-GB',{timeZone:HOUSE_TZ,hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date());
+async function refreshQuote(a){await QUOTES.refreshAsset(a,{setValue:FIN.setValue,today:dateInTz(new Date())});if(a.quote&&!a.quote.error)a.quote.slot=quoteSlot();}
+let quotesBusy=false;
+async function quotesTick(){if(quotesBusy||process.env.QUOTES_OFF==='1')return;quotesBusy=true;try{const slot=quoteSlot();let n=0;
+  for(const a of (db.finance?.assets||[])){if(a.archived||!a.symbol||!(a.shares>0))continue;const q=a.quote;
+   const due=!q||q.slot!==slot;const retryOk=!q?.error||Date.now()-Date.parse(q.checkedAt||0)>3600_000;
+   if(due&&retryOk){await refreshQuote(a);n++;}}
+  if(n)save();}catch(e){console.error('Cotações:',e.message);}finally{quotesBusy=false;}}
 function dailyHour(){if(process.env.DAILY_ANY_HOUR==='1')return true;const now=new Intl.DateTimeFormat('en-GB',{timeZone:process.env.TZ||'Europe/Lisbon',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date());return now>=(db.ha?.dailyTime||'08:30');}
-setInterval(()=>{try{backups.autoTick();}catch(e){console.error('Cópia automática falhou:',e.message);}try{if(FIN.generateRecurring(db.finance,dateInTz(new Date()),id))save();}catch(e){console.error('Despesas fixas:',e.message);}try{if(dailyHour())notif.daily();}catch(e){console.error('Notificações diárias:',e.message);}try{equip.tick();}catch(e){console.error('Equipamentos:',e.message);}},30*60_000).unref();
+setInterval(()=>{try{backups.autoTick();}catch(e){console.error('Cópia automática falhou:',e.message);}try{if(FIN.generateRecurring(db.finance,dateInTz(new Date()),id))save();}catch(e){console.error('Despesas fixas:',e.message);}try{if(dailyHour())notif.daily();}catch(e){console.error('Notificações diárias:',e.message);}try{equip.tick();}catch(e){console.error('Equipamentos:',e.message);}quotesTick();},30*60_000).unref();
+setTimeout(quotesTick,20_000).unref();
 try{equip.tick();}catch(e){console.error('Equipamentos:',e.message);}
 try{if(dailyHour())notif.daily();}catch(e){console.error('Notificações diárias:',e.message);}
 try{if(FIN.generateRecurring(db.finance,dateInTz(new Date()),id))save();}catch(e){console.error('Despesas fixas:',e.message);}

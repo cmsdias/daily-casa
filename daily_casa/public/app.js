@@ -142,7 +142,7 @@ const HOUSE_PAGES=[
  ['worklogs','Registo de horas','clock','Trabalhos e tempo de cada pessoa',()=>true],
  ['settings','Definições','sliders-horizontal','A casa, notificações e dados',()=>true]];
 const TASK_VIEWS=[['list','Lista'],['routines','Rotinas'],['calendar','Calendário'],['rooms','Divisões']];
-let taskView='list',quickFilter='all';
+let taskView='list',quickFilter='mine';
 const actionHandlers=[];const demoHandlers=[]; // demonstração: (path,method,body)=>resposta ou undefined
 const modalRenderers={}; // janelas que sobrevivem a um novo desenho da página: type → (holder)=>void
  // módulos acrescentam aqui as suas ações: async (name,el)=>true se trataram a ação
@@ -150,7 +150,7 @@ const modalRenderers={}; // janelas que sobrevivem a um novo desenho da página:
 function normalizePage(){if(page==='dashboard')page='today';if(page==='routines'){page='tasks';taskView='routines';}if(page==='calendar'){page='tasks';taskView='calendar';}if(page==='rooms'){page='tasks';taskView='rooms';}}
 const sectionOf=p=>NAV_MAIN.some(x=>x[0]===p)?p:p==='notifications'?'today':'house';
 const pageTitle=p=>(NAV_MAIN.find(x=>x[0]===p)||HOUSE_PAGES.find(x=>x[0]===p)||{notifications:[0,'Notificações']}[p]||[])[1]||'';
-function go(target,opts={}){quickCreateOpen=false;moreOpen=false;notifOpen=false;page=target;normalizePage();if(opts.view)taskView=opts.view;modal=null;if(!opts.keepFilters){query='';personFilter='all';roomFilter='all';priorityFilter='all';statusFilter='all';quickFilter='all';}render();window.scrollTo(0,0);}
+function go(target,opts={}){quickCreateOpen=false;moreOpen=false;notifOpen=false;page=target;normalizePage();if(opts.view)taskView=opts.view;modal=null;if(!opts.keepFilters){query='';personFilter='all';roomFilter='all';priorityFilter='all';statusFilter='all';quickFilter='mine';}render();window.scrollTo(0,0);}
 // Localização no topo (computador): só mostra o caminho quando há um nível acima para onde voltar.
 function crumbs(){const sep='<span class="crumb-sep" aria-hidden="true">/</span>';const link=(pg,l,extra='')=>`<button type="button" class="crumb-link" data-action="${pg==='settings'?'settings-open':'nav'}" data-page="${pg}" ${extra}>${esc(l)}</button>`;
  const parts=[];if(sectionOf(page)==='house'&&page!=='house')parts.push(link('house','Casa'));
@@ -340,7 +340,7 @@ if(name==='profile-open'){moreOpen=false;quickCreateOpen=false;profileDraft={};m
  if(name==='open-all-rooms'){page='tasks';taskView='rooms';tab='active';query='';statusFilter='all';personFilter='all';priorityFilter='all';roomFilter='all';render();window.scrollTo(0,0);return;}if(name==='open-room'){page='tasks';taskView='list';tab='active';query='';statusFilter='all';personFilter='all';priorityFilter='all';roomFilter=el.dataset.room;render();window.scrollTo(0,0);return;}
  if(name==='tab'){tab=el.dataset.tab;render();return;}
  if(name==='tasks-clear-done'){const n=tasks().filter(t=>t.kind==='project'&&t.status==='done').length;if(!await confirmDialog({title:`Eliminar ${n} ${n===1?'tarefa concluída':'tarefas concluídas'}?`,message:'Saem definitivamente da lista. As rotinas não são afetadas e o histórico de conclusões mantém-se.',confirmLabel:'Eliminar',danger:true}))return;try{const r=demo?(()=>{const k=tasks().filter(t=>t.kind==='project'&&t.status==='done').length;store.tasks=tasks().filter(t=>!(t.kind==='project'&&t.status==='done'));persistDemo();return {removed:k};})():await api('/api/tasks/clear-done','POST',{});await reload();toast(`${r.removed} ${r.removed===1?'tarefa eliminada':'tarefas eliminadas'}.`);}catch(e){toast(e.message);}return;}
- if(name==='add'){openQuickTask(page==='tasks'&&taskView==='routines'?'routine':'project');return;}
+ if(name==='add'){openQuickTask(page==='tasks'&&(taskView==='routines'||(taskView==='list'&&typeof listKind!=='undefined'&&listKind==='routine'))?'routine':'project');return;}
  if(name==='edit'){openTask(el.dataset.id);return;}
  if(name==='close'){closeModal();return;}
  if(name==='refresh'){await reload();toast(offline?'Sem ligação ao servidor.':'Dados atualizados.');return;}
