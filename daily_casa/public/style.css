@@ -1896,3 +1896,6 @@ details.task-when:not([open])>summary{margin-bottom:4px}
 .fin-gain b{text-align:right}
 .fin-gain.up b:last-child{color:#3e6b50}
 .fin-gain.down b:last-child{color:#a8473d}
+/* 3.9.3 · Campos selecionados: um só contorno colorido (a margem), sem anel exterior nem segundo traço. */
+:is(input,select,textarea):not([type="checkbox"]):not([type="radio"]):not([type="file"]):is(:focus,:focus-visible){outline:0!important;box-shadow:none!important;border-color:var(--input-active)!important}
+.search:focus-within{box-shadow:none!important;border-color:var(--input-active)}
