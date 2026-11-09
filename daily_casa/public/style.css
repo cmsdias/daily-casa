@@ -1988,3 +1988,6 @@ input.dp-native{position:absolute!important;width:1px!important;height:1px!impor
 .orphan-row small{font-size:12px;color:#6e5320}
 @media (max-width:480px){.orphan-row{grid-template-columns:minmax(0,1fr)}}
 .orphan-row select{padding-left:14px;min-height:44px}
+/* 3.11.3 · Fotografias de perfil ampliáveis. */
+.person-card .person-head .avatar.has-photo,.profile-photo .avatar.has-photo{cursor:zoom-in}
+.avatar-figure img{border-radius:50%;width:min(78vw,420px);height:min(78vw,420px);object-fit:cover;aspect-ratio:1}
