@@ -1,3 +1,7 @@
+# 3.9.4 — Nome da app instalada
+
+- A app instalada passa a chamar-se só «Daily Casa» em todas as plataformas (computador, iOS e Android).
+
 # 3.9.3 — Contorno simples nos campos
 
 - Ao escrever num campo, aparece só uma linha de contorno colorida, sem o anel duplo à volta.
