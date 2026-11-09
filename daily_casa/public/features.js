@@ -425,3 +425,19 @@ function viewAvatar(src,name,sub){if(!src)return;document.getElementById('photo-
 document.addEventListener('click',e=>{const a=e.target.closest?.('.person-card .person-head .avatar.has-photo,.profile-photo .avatar.has-photo,.person-modal .avatar.has-photo');if(!a)return;const img=a.querySelector('img');if(!img)return;
  const card=a.closest('.person-card');const name=card?.querySelector('.person-id strong')?.textContent||a.closest('.modal')?.querySelector('h2')?.textContent||'';const sub=card?.querySelector('.person-id .sub')?.textContent||'';e.preventDefault();viewAvatar(img.getAttribute('src'),name,sub);});
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches?.('.person-card .avatar.has-photo,.profile-photo .avatar.has-photo')){e.preventDefault();e.target.click();}});
+
+/* 3.11.4 · Editar ou apagar um registo de trabalho (Registo de horas). */
+modalRenderers['worklog-edit']=holder=>{const e=workLogs().find(x=>x.id===modal.id);if(!e){modal=null;return;}
+ const body=`<form id="worklog-edit-form"><div class="form-row"><div class="field"><label for="we-date">Data</label><input id="we-date" type="date" name="date" required value="${esc(e.date)}" max="${esc(today())}"/></div><div class="field"><label for="we-min">Duração (min)</label><input id="we-min" type="number" inputmode="numeric" name="minutes" min="1" max="1440" required value="${esc(String(e.minutes))}"/></div></div>
+ <div class="field"><label for="we-task">Tarefa relacionada</label><select id="we-task" name="taskId">${option('','Sem tarefa associada',e.taskId||'')}${tasks().map(t=>option(t.id,t.title,e.taskId||'')).join('')}</select></div>
+ ${canManage()?`<div class="field"><label for="we-who">Realizado por</label><select id="we-who" name="userId">${people().filter(p=>p.active!==false||p.id===e.userId).map(p=>option(p.id,p.name,e.userId)).join('')}</select></div>`:''}
+ <div class="field"><label for="we-note">Trabalho realizado</label><textarea id="we-note" name="note" rows="3" maxlength="1000" required>${esc(e.note||'')}</textarea></div>
+ <div class="modal-actions"><button type="button" class="button danger" data-action="worklog-delete" data-id="${esc(e.id)}">${ico('trash')} Eliminar</button><span class="spacer"></span><button type="button" class="button" data-action="close">Cancelar</button><button type="submit" class="button primary">${ico('check')} Guardar</button></div></form>`;
+ holder.innerHTML=modalShell({title:'Editar registo',sub:`${esc(owner(e.userId))} · registado a ${esc(shortDate(String(e.createdAt||e.date).slice(0,10)))}`,body});
+ const f=holder.querySelector('#worklog-edit-form');f.addEventListener('submit',async ev=>{ev.preventDefault();const v=Object.fromEntries(new FormData(f));v.minutes=Number(v.minutes);const b=f.querySelector('[type=submit]');b.disabled=true;
+  try{await api('/api/worklogs/'+encodeURIComponent(e.id),'PATCH',v);modal=null;await reload();toast('Registo atualizado.');}catch(err){toast(err.message);b.disabled=false;}});};
+actionHandlers.push(async(name,el)=>{
+ if(name==='worklog-edit'){modal={type:'worklog-edit',id:el.dataset.id};renderModal();return true;}
+ if(name!=='worklog-delete')return false;
+ if(!await confirmDialog({title:'Eliminar este registo?',message:'O tempo deixa de contar no resumo do mês.',confirmLabel:'Eliminar',danger:true}))return true;
+ try{await api('/api/worklogs/'+encodeURIComponent(el.dataset.id),'DELETE',{});modal=null;await reload();toast('Registo eliminado.');}catch(e){toast(e.message);}return true;});

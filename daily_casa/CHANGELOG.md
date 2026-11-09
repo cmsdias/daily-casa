@@ -1,3 +1,8 @@
+# 3.11.4 — Registos de trabalho editáveis
+
+- No Registo de horas, tocar num registo abre a edição: data, duração, tarefa, quem fez e descrição. Também se pode eliminar.
+- Cada pessoa altera os seus registos; o administrador e os gestores alteram todos.
+
 # 3.11.3 — Fotografias de perfil em grande
 
 - Tocar numa fotografia de perfil (em Pessoas e no perfil) mostra-a em grande; fecha com «Fechar», tocando fora ou com Esc.
