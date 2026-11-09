@@ -1,3 +1,7 @@
+# 3.10.3 — Barra de baixo com cor sólida
+
+- A barra de baixo mantém a forma flutuante, mas com cor sólida: verde da app no modo claro e a cor dos cartões no modo escuro.
+
 # 3.10.2 — Compras sem apagar por engano
 
 - A lista de compras deixa de ter o botão × em cada artigo. Para apagar, toca no nome do artigo e usa «Eliminar».
