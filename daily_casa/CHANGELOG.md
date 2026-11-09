@@ -1,3 +1,9 @@
+# 3.11.0 — O tempo em casa no ecrã Hoje
+
+- Novo cartão de meteorologia no ecrã Hoje: temperatura de agora (estação do IPMA mais próxima), estado do céu, chuva, vento e a previsão dos próximos dias.
+- Dicas ligadas às tarefas: quando chove, a rega pode esperar e as tarefas de exterior passam para o primeiro dia seco; também avisa do calor e do risco de geada.
+- Na roda dentada do cartão: localização, fonte (IPMA ou a previsão do Home Assistant), dicas e avisos de tempo severo do IPMA por notificação. Cada pessoa pode esconder o cartão para si.
+
 # 3.10.3 — Barra de baixo com cor sólida
 
 - A barra de baixo mantém a forma flutuante, mas com cor sólida: verde da app no modo claro e a cor dos cartões no modo escuro.

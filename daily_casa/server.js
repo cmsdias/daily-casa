@@ -6,6 +6,7 @@ const crypto=require('node:crypto');
 const {URL}=require('node:url');
 const {createBackups}=require('./lib/backups');
 const {createHa}=require('./lib/ha');
+const {createWeather}=require('./lib/weather');let WEATHER=null;
 const {createNotifications}=require('./lib/notifications');
 const {createEquipment}=require('./lib/equipment');
 const {createIncidents}=require('./lib/incidents');
@@ -107,7 +108,7 @@ function publicUrl(){return db.settings?.publicUrl||db.settings?.publicUrlAuto||
 const {createWebPush}=require('./lib/webpush');
 const WEBPUSH=createWebPush({getDb:()=>db,save,newId:()=>id(),subject:()=>{const m=MAILER.status();return m.configured?'mailto:'+m.from:(publicUrl()||'mailto:daily-casa@localhost');},allowHttp:process.env.PUSH_ALLOW_HTTP==='1',onError:(...a)=>console.error(...a)});
 const URGENT_TYPES=new Set(['security','incident']);
-const NOTIF_TYPES=['assigned','rotation','done','due','approval','incident','equipment','birthday','season'];
+const NOTIF_TYPES=['assigned','rotation','done','due','approval','incident','equipment','birthday','season','weather'];
 const wantsPush=(userId,type)=>type==='security'||db.people.find(x=>x.id===userId)?.notifPrefs?.[type]!==false;
 // 3.6 · Convites por email.
 const INV=require('./lib/invites');const INVITES=INV.createInvites({getDb:()=>db,save,newId:()=>id()});
@@ -193,7 +194,7 @@ function personView(viewer,p){const self=viewer.id===p.id,admin=roleOf(viewer)==
  return {id:p.id,name:p.name,username:collab&&!self?'':p.username,role:roleOf(p),avatar:p.avatar||'●',photo:p.photo||'',active:p.active!==false,
   ...(admin?{accessDays:Array.isArray(p.accessDays)?p.accessDays:[],mustChangePassword:!!p.mustChangePassword}:{}),
   ...(self||admin||elevated(viewer)?{email:p.email||'',phone:p.phone||''}:{}),
-  ...(self?{notifPrefs:p.notifPrefs||{},pushOff:!!p.pushOff,pushReady:!!(db.ha?.notify?.[p.id]),webPush:!!db.push?.subs?.some(s=>s.userId===p.id)}:{}),
+  ...(self?{notifPrefs:p.notifPrefs||{},hideWeather:!!p.hideWeather,pushOff:!!p.pushOff,pushReady:!!(db.ha?.notify?.[p.id]),webPush:!!db.push?.subs?.some(s=>s.userId===p.id)}:{}),
  ...(self||admin?{birthDate:p.birthDate||''}:(!collab&&p.birthDate?{birthday:p.birthDate.slice(5)}:{}))};}
 function peopleFor(viewer){if(roleOf(viewer)!=='collaborator')return db.people.map(p=>personView(viewer,p));const allowed=db.tasks.filter(t=>canSeeTask(viewer,t));return db.people.filter(p=>p.id===viewer.id||allowed.some(t=>t.assignedTo===p.id||t.createdBy===p.id)).map(p=>personView(viewer,p));}
 function cleanEmail(v){const e=cleanStr(v,120).toLowerCase();if(e&&!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e))throw Error('Email inválido.');return e;}
@@ -210,6 +211,8 @@ function applyProfile(target,b){
  if('username'in b)target.username=cleanUsername(b.username,target.id);
  if('email'in b){const e=cleanEmail(b.email);if(!e&&target.email)throw Error('O email é usado para entrar: não pode ficar em branco.');{const ne=uniqueEmail(e,target.id);if(ne!==target.email)delete target.activation;target.email=ne;}}
  if('pushOff'in b)target.pushOff=b.pushOff===true;
+ // 3.11 · Cada pessoa pode esconder o cartão da meteorologia no ecrã Hoje.
+ if('hideWeather'in b){if(b.hideWeather)target.hideWeather=true;else delete target.hideWeather;}
  // 3.5 · Tipos de notificação que a pessoa quer receber no telemóvel (o sino mostra sempre tudo).
  if(b.notifPrefs&&typeof b.notifPrefs==='object'&&!Array.isArray(b.notifPrefs)){const prefs={...(target.notifPrefs||{})};for(const [k,v] of Object.entries(b.notifPrefs))if(NOTIF_TYPES.includes(k))prefs[k]=v!==false;target.notifPrefs=prefs;}
  if('phone'in b)target.phone=cleanPhone(b.phone);
@@ -387,6 +390,10 @@ const server=http.createServer(async (req,res)=>{
     }
     const user=readUser(req);if(!user)return fail(res,401,'Inicia sessão para continuar.');
     // Notificações push neste dispositivo (3.3).
+    // 3.11: meteorologia da casa.
+    if(p==='/api/weather'&&req.method==='GET')return send(res,200,{weather:WEATHER.view(elevated(user))});
+    if(p==='/api/weather/locations'&&req.method==='GET'){if(!elevated(user))return fail(res,403,'Apenas administradores e gestores.');try{return send(res,200,{locations:(await WEATHER.locations()).map(l=>({id:l.id,name:l.name}))});}catch(e){return fail(res,502,'Não foi possível obter as localizações do IPMA: '+e.message);}}
+    if(p==='/api/weather'&&req.method==='PATCH'){if(!elevated(user))return fail(res,403,'Apenas administradores e gestores.');try{const w=await WEATHER.update(b);logAction(user,'weather.settings','');return send(res,200,{weather:w});}catch(e){return fail(res,400,e.message);}}
     if(p==='/api/push'&&req.method==='GET')return send(res,200,{publicKey:WEBPUSH.publicKey(),devices:WEBPUSH.devices(user.id).length});
     if(p==='/api/push/subscribe'&&req.method==='POST'){try{const n=WEBPUSH.subscribe(user.id,b.subscription,cleanStr(b.label,60));logAction(user,'push.subscribe',user.id);return send(res,200,{devices:n});}catch(e){return fail(res,e.status||400,e.message);}}
     if(p==='/api/push/unsubscribe'&&req.method==='POST')return send(res,200,{devices:WEBPUSH.unsubscribe(user.id,String(b.endpoint||''))});
@@ -513,7 +520,7 @@ const server=http.createServer(async (req,res)=>{
         if(have.has(key(t)))continue;have.add(key(t));db.tasks.push(t);created++;if(created>=80)break;}
       st.onboarded=true;logAction(user,'onboarding',`${rooms.length}/${created}`);save();return send(res,200,{settings:st,created,removed});
     }
-    if(p==='/api/state'&&req.method==='GET')return send(res,200,{...visibleState(user),user:{id:user.id,name:user.name,role:roleOf(user)}});
+    if(p==='/api/state'&&req.method==='GET')return send(res,200,{...visibleState(user),user:{id:user.id,name:user.name,role:roleOf(user)},weather:WEATHER?WEATHER.view(elevated(user)):null});
     if(p==='/api/export'&&req.method==='GET'){if(user.role!=='admin')return fail(res,403,'Apenas administradores.');const visible=new Set(db.tasks.filter(t=>canSeeTask(user,t)).map(t=>t.id));return send(res,200,{exportedAt:new Date().toISOString(),...state(),tasks:db.tasks.filter(t=>visible.has(t.id)),history:db.history.filter(h=>!h.taskId||visible.has(h.taskId)).slice(-200),audit:db.audit.filter(x=>!x.action.startsWith('task.')||visible.has(x.entityId)).slice(-300)},{'Content-Disposition':'attachment; filename="daily-casa-backup.json"'});}
     if(p==='/api/import'&&req.method==='POST'){
       if(user.role!=='admin')return fail(res,403,'Apenas administradores.');
@@ -741,4 +748,7 @@ try{if(dailyHour())notif.daily();}catch(e){console.error('Notificações diária
 try{if(FIN.generateRecurring(db.finance,dateInTz(new Date()),id))save();}catch(e){console.error('Despesas fixas:',e.message);}
 const hhmm=()=>new Intl.DateTimeFormat('en-GB',{timeZone:HOUSE_TZ,hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date());
 ha=createHa({getDb:()=>db,todayISO:()=>dateInTz(new Date()),nowHM:hhmm,save});ha.start();
+WEATHER=createWeather({getDb:()=>db,save,haCall:(m,pth,body)=>ha.call(m,pth,body),haAvailable:()=>ha.available(),today:()=>dateInTz(new Date()),
+  notifyAll:(title,body)=>{for(const q of db.people)if(isActive(q))notif.add(q.id,'weather',title,body,{page:'today'});}});
+setTimeout(()=>WEATHER.tick(),15_000).unref();setInterval(()=>WEATHER.tick(),10*60_000).unref();
 server.listen(PORT,HOST,()=>console.log(`Daily Casa ${APP_VERSION} online: http://${HOST}:${PORT} • dados: ${DB_FILE}${ha.available()?' • Home Assistant ligado':''}`));

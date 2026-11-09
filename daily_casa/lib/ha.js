@@ -97,6 +97,6 @@ function createHa({getDb,todayISO,nowHM,save=()=>{},onError=console.error,fetchI
   // Chamado depois de cada gravação: agrupa alterações seguidas numa só atualização.
   function changed(){if(!available()||!settings().sensors)return;clearTimeout(sensorTimer);sensorTimer=setTimeout(()=>pushSensors().catch(()=>{}),3000);sensorTimer.unref?.();}
   function start(){if(!available())return;const t=setInterval(()=>{digestTick().catch(()=>{});pushSensors().catch(()=>{});},60_000);t.unref?.();setTimeout(()=>pushSensors(true).catch(()=>{}),5000).unref?.();}
-  return {available,info,notifyServices,notify,taskAssigned,digestTick,sensorStates,pushSensors,changed,start};
+  return {available,info,notifyServices,notify,taskAssigned,digestTick,sensorStates,pushSensors,changed,start,call};
 }
 module.exports={createHa};
