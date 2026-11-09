@@ -1,3 +1,7 @@
+# 3.9.1 — Pequena correção nas Finanças
+
+- O imposto sobre juros escrito à mão deixa de ser substituído pela sugestão quando mudas o tipo do item.
+
 # 3.9.0 — Tarefas partilhadas
 
 - Uma tarefa pode ter várias pessoas responsáveis (em «Partilhar com», na edição da tarefa). Aparece em «As minhas» de cada uma e todas são avisadas.
