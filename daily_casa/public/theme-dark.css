@@ -323,6 +323,7 @@ html[data-theme="dark"] .install-pointer{border-top:10px solid #383838}
 html[data-theme="dark"] .remember-box{border:1.5px solid var(--input-stroke,#45504a);background:#1c2520}
 html[data-theme="dark"] .viewas-banner{color:#d4e5dc}
 html[data-theme="dark"] .viewas-banner button{background:#17261e;color:#f8f7f2}
+html[data-theme="dark"] .shopping-line .shop-name small{color:#adb3ae}
 html[data-theme="dark"]{color-scheme:dark;--dk-page:#131916;--dk-surface:#1c2520;--dk-raised:#26302b;--dk-ink:#E7ECE8;--dk-muted:#A3AFA7;--dk-line:#2C3A32}
 html[data-theme="dark"] body{background:var(--dk-page);color:var(--dk-ink)}
 html[data-theme="dark"] input,html[data-theme="dark"] select,html[data-theme="dark"] textarea{background:var(--dk-raised);color:var(--dk-ink);border-color:#34443a}

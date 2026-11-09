@@ -262,15 +262,18 @@ function installSheet(){
 setInterval(()=>{if(!installShown&&store?.user&&!document.hidden)setTimeout(installSheet,3500);},4000);
 
 /* 3.4 · Zoom elástico: com dois dedos amplia-se o conteúdo; ao largar volta suavemente ao tamanho normal.
-   Substitui o zoom do browser (que no iPhone ficava preso ampliado). As fotografias e janelas abertas mantêm o seu comportamento. */
+   Substitui o zoom do browser (que no iPhone ficava preso ampliado). 3.7: também sobre campos e dentro das janelas
+   (amplia-se a janela), e o zoom automático do iPhone ao tocar num campo fica desligado (maximum-scale no viewport);
+   se mesmo assim o ecrã ficar ampliado, volta à largura normal ao sair do campo. Só as fotografias usam o zoom nativo. */
 (function(){
- const skip=t=>!!(t&&t.closest&&t.closest('#photo-viewer,#crop-holder,.overlay,.confirm-overlay,#install-sheet,#version-holder,input,textarea,select'));
- for(const ev of ['gesturestart','gesturechange'])document.addEventListener(ev,e=>{if(!skip(e.target))e.preventDefault();},{passive:false});
+ const native=t=>!!(t&&t.closest&&t.closest('#photo-viewer,#crop-holder'));
+ const target=t=>t?.closest?.('.overlay .modal,.store-mode,#install-sheet')||document.querySelector('main.main');
+ for(const ev of ['gesturestart','gesturechange'])document.addEventListener(ev,e=>{if(!native(e.target))e.preventDefault();},{passive:false});
  let g=null;
  const dist=t=>Math.hypot(t[0].clientX-t[1].clientX,t[0].clientY-t[1].clientY);
  const mid=t=>({x:(t[0].clientX+t[1].clientX)/2,y:(t[0].clientY+t[1].clientY)/2});
  document.addEventListener('touchstart',e=>{
-  if(e.touches.length!==2||skip(e.target))return;const el=document.querySelector('main.main');if(!el)return;
+  if(e.touches.length!==2||native(e.target))return;const el=target(e.target);if(!el)return;
   const r=el.getBoundingClientRect(),m=mid(e.touches);g={el,d:dist(e.touches),m};
   el.style.transition='none';el.style.transformOrigin=`${m.x-r.left}px ${m.y-r.top}px`;el.style.willChange='transform';
  },{passive:true});
@@ -283,6 +286,16 @@ setInterval(()=>{if(!installShown&&store?.user&&!document.hidden)setTimeout(inst
   el.style.transition='transform .5s cubic-bezier(.18,1.35,.4,1)';el.style.transform='';
   setTimeout(()=>{if(!g){el.style.transition='';el.style.transformOrigin='';el.style.willChange='';}},550);};
  document.addEventListener('touchend',release);document.addEventListener('touchcancel',release);
+ // Rede de segurança: se o browser ampliou (zoom nativo), repõe a largura do ecrã quando se sai do campo.
+ const vp=document.querySelector('meta[name=viewport]');
+ const iOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+ // No iPhone/iPad, maximum-scale=1 impede o zoom automático ao tocar num campo (o zoom com dois dedos continua possível).
+ if(vp&&iOS&&!/maximum-scale/.test(vp.content))vp.setAttribute('content',vp.content+', maximum-scale=1');
+ const base=vp?.getAttribute('content')||'';
+ const reset=()=>{const vv=window.visualViewport;if(!vp||!vv||vv.scale<=1.01||document.querySelector('#photo-viewer'))return;
+  vp.setAttribute('content',base.replace(/,?\s*maximum-scale=[^,]*/,'')+', maximum-scale=1, user-scalable=no');setTimeout(()=>vp.setAttribute('content',base),300);};
+ document.addEventListener('focusout',()=>setTimeout(()=>{if(!document.activeElement?.matches?.('input,textarea,select'))reset();},120));
+ window.visualViewport?.addEventListener('resize',()=>{if(!document.activeElement?.matches?.('input,textarea,select'))setTimeout(reset,400);});
 })();
 
 /* 3.5 · Sobre o que te avisamos: cada pessoa escolhe que tipos de notificação recebe no telemóvel (o sino mostra sempre tudo). */
