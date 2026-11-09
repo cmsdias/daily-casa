@@ -1,3 +1,8 @@
+# 3.11.3 — Fotografias de perfil em grande
+
+- Tocar numa fotografia de perfil (em Pessoas e no perfil) mostra-a em grande; fecha com «Fechar», tocando fora ou com Esc.
+- O botão das definições do cartão do tempo passa a ser os três pontos.
+
 # 3.11.2 — Despesas descontam na conta de onde foram pagas
 
 - Uma despesa com «Pago de» desconta automaticamente no valor estimado dessa conta ou depósito (também as despesas fixas com «Débito em»).

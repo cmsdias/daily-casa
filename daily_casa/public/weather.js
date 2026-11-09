@@ -40,7 +40,7 @@ function wxTip(days){
 }
 function weatherCard(){
  const w=store.weather;const u=me();if(!w||u?.hideWeather)return '';
- const gear=`<button type="button" class="wx-gear" data-action="weather-settings" aria-label="Definições da meteorologia">${ico('settings')}</button>`;
+ const gear=`<button type="button" class="wx-gear" data-action="weather-settings" aria-label="Definições da meteorologia">${ico('dots')}</button>`;
  const d=w.data;
  if(!d||!d.days?.length)return `<section class="wx-card" aria-label="Meteorologia"><div class="wx-head"><span class="eyebrow">TEMPO EM CASA</span>${gear}</div><p class="wx-empty">${w.error?'A previsão não está disponível de momento. Tentamos de novo dentro de minutos.':'A obter a previsão…'}</p></section>`;
  const t0=today();const days=d.days.filter(x=>x.date>=t0);const day0=days[0]||d.days[0];

@@ -416,3 +416,12 @@ async function versionReload(){
  try{const reg=await navigator.serviceWorker?.getRegistration();if(reg)await reg.update();}catch{}
  location.reload();
 }
+
+/* 3.11.3 · Tocar numa fotografia de perfil (Pessoas, perfil, edição de pessoa) mostra-a em grande. */
+function viewAvatar(src,name,sub){if(!src)return;document.getElementById('photo-viewer')?.remove();
+ const v=document.createElement('div');v.id='photo-viewer';v.innerHTML=`<div class="confirm-overlay photo-overlay" data-photo-close><figure class="photo-figure avatar-figure" role="dialog" aria-modal="true" aria-label="Fotografia de ${esc(name||'perfil')}"><img src="${esc(src)}" alt="Fotografia de ${esc(name||'perfil')}"/><figcaption><span><b>${esc(name||'')}</b>${sub?`<small>${esc(sub)}</small>`:''}</span><span class="photo-figure-actions"><button type="button" class="button" data-photo-close>${ico('check')} Fechar</button></span></figcaption></figure></div>`;
+ document.body.appendChild(v);const prev=document.activeElement;const close=()=>{v.remove();document.removeEventListener('keydown',onKey,true);prev?.focus?.();};const onKey=ev=>{if(ev.key==='Escape'){ev.stopPropagation();close();}};document.addEventListener('keydown',onKey,true);
+ v.addEventListener('click',ev=>{if(ev.target.closest('[data-photo-close]')&&(ev.target.closest('button')||ev.target.classList.contains('photo-overlay')))close();});v.querySelector('button[data-photo-close]').focus();}
+document.addEventListener('click',e=>{const a=e.target.closest?.('.person-card .person-head .avatar.has-photo,.profile-photo .avatar.has-photo,.person-modal .avatar.has-photo');if(!a)return;const img=a.querySelector('img');if(!img)return;
+ const card=a.closest('.person-card');const name=card?.querySelector('.person-id strong')?.textContent||a.closest('.modal')?.querySelector('h2')?.textContent||'';const sub=card?.querySelector('.person-id .sub')?.textContent||'';e.preventDefault();viewAvatar(img.getAttribute('src'),name,sub);});
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches?.('.person-card .avatar.has-photo,.profile-photo .avatar.has-photo')){e.preventDefault();e.target.click();}});
