@@ -1,6 +1,6 @@
 {
   "name": "daily-casa",
-  "version": "3.7.1",
+  "version": "3.7.2",
   "private": true,
   "description": "Gestão partilhada das tarefas e rotinas da casa, instalável como PWA.",
   "scripts": {
