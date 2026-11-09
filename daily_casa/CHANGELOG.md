@@ -1,3 +1,7 @@
+# 3.8.1 — Mais espaço entre o sino e o avatar
+
+- No topo do telemóvel, o sino e a fotografia de perfil ficam mais afastados.
+
 # 3.8.0 — Lista de tarefas arrumada, barra em vidro e ações atualizadas sozinhas
 
 - Tarefas: seletor Pontuais / Rotinas no topo, a lista abre em «As minhas» e os grupos por prazo abrem e fecham (Mais tarde e Sem data começam fechados; a app lembra-se da tua escolha).
