@@ -1,3 +1,7 @@
+# 3.9.3 — Contorno simples nos campos
+
+- Ao escrever num campo, aparece só uma linha de contorno colorida, sem o anel duplo à volta.
+
 # 3.9.2 — Limite de pedidos em todas as rotas
 
 - Todas as rotas da app passam a ter limite de ritmo, por ligação e por sessão, com valores largos para o uso normal.
