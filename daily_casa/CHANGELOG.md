@@ -1,3 +1,8 @@
+# 3.11.1 — Divisões das tarefas sempre ligadas à lista
+
+- Ao mudar o nome de uma divisão, as tarefas, equipamentos e ocorrências dessa divisão passam a acompanhar o novo nome.
+- Em Definições › A casa, as divisões usadas nas tarefas que não estão na lista (por exemplo «Hall de entrada» e «Hall Entrada») aparecem num aviso, já com a correspondência sugerida: basta guardar para as tarefas passarem para a divisão certa e deixarem de aparecer em «Sem piso».
+
 # 3.11.0 — O tempo em casa no ecrã Hoje
 
 - Novo cartão de meteorologia no ecrã Hoje: temperatura de agora (estação do IPMA mais próxima), estado do céu, chuva, vento e a previsão dos próximos dias.

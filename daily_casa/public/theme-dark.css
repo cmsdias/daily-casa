@@ -375,6 +375,9 @@ html[data-theme="dark"] .wx-day em.wet{color:#97b5c7}
 html[data-theme="dark"] .wx-src{color:#9ba39d}
 html[data-theme="dark"] .wx-empty{color:#b7bfbb}
 html[data-theme="dark"] .weather-modal .pref-row{border-top:1px solid #3b4840}
+html[data-theme="dark"] .orphan-rooms{background:#453821;color:#e5d5b7}
+html[data-theme="dark"] .orphan-rooms .manager-help{color:#dfcead}
+html[data-theme="dark"] .orphan-row small{color:#dfcead}
 html[data-theme="dark"] .dp-day.sel{background:#C9A568;color:#17261E}
 @media (max-width:650px){html[data-theme="dark"] .mobile-nav.tab-nav{background:var(--dk-surface);border:1px solid #2C3A32;box-shadow:0 14px 30px -12px rgba(0,0,0,.7)}html[data-theme="dark"] .mobile-nav.tab-nav>.tab-item{color:#A3AFA7}html[data-theme="dark"] .mobile-nav.tab-nav>.tab-item.active{background:#2E3B34;color:#E7ECE8}}
 html[data-theme="dark"] .dp-day.out{color:#58665E}
