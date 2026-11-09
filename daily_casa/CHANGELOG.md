@@ -1,3 +1,7 @@
+# 3.7.2 — Unidades cacho e molho
+
+- Novas unidades nas compras: cacho (bananas, uvas) e molho (salsa, coentros, espargos). Também se escrevem diretamente, por exemplo «2 cachos de uvas».
+
 # 3.7.1 — Sugestões de compras sem erros e poupanças que renovam
 
 - Compras habituais: um produto corrigido ou apagado antes de ser comprado deixa de ficar como sugestão; em «Editar» podes esquecer qualquer sugestão.
