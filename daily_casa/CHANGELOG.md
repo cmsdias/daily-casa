@@ -1,3 +1,8 @@
+# 3.7.1 — Sugestões de compras sem erros e poupanças que renovam
+
+- Compras habituais: um produto corrigido ou apagado antes de ser comprado deixa de ficar como sugestão; em «Editar» podes esquecer qualquer sugestão.
+- Depósitos e poupanças com renovação automática (todos os meses, a cada 3 ou 6 meses, ou todos os anos): continuam a render e mostram a próxima renovação.
+
 # 3.7.0 — Finanças mais completas e correções no telemóvel
 
 - Despesas fixas anuais, semestrais ou nos meses que escolheres (seguros, IMI em maio e novembro…); o «por mês» mostra a média.

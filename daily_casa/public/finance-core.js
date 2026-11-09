@@ -44,13 +44,17 @@ function projectAsset(a,todayISO){
   const rate=Number(a.ratePct)||0,contrib=Number(a.contribCents)||0;if(!rate&&!contrib)return null;
   const h=(a.history||[]).filter(x=>x.date<=todayISO);const base=h.length?h[h.length-1]:{date:todayISO,valueCents:a.valueCents||0};
   const tax=a.taxPct!=null?Number(a.taxPct):(DEFAULT_TAX[a.type]||0);const debt=isLiability(a);const day=Math.min(Math.max(Number(a.contribDay)||1,1),31);
-  const stop=a.maturityDate&&!debt&&a.maturityDate<todayISO?a.maturityDate:todayISO;
+  // Sem renovação automática, deixa de render no vencimento; com renovação, continua (juros capitalizados).
+  const stop=a.maturityDate&&!debt&&!a.renewMonths&&a.maturityDate<todayISO?a.maturityDate:todayISO;
   let v=base.valueCents,interest=0,contribs=0,d=base.date,guard=0;
   while(d<stop&&guard++<3700){d=addDays(d,1);const [y,m,dd]=d.split('-').map(Number);const payDay=Math.min(day,monthDays(y,m))===dd;
     if(debt){if(payDay&&v>0){const i=v*rate/100/12;interest+=i;v=Math.max(0,v+i-contrib);contribs+=contrib;}}
     else{const i=v*rate/100/365*(1-tax/100);v+=i;interest+=i;if(payDay&&contrib){v+=contrib;contribs+=contrib;}}}
   return {valueCents:Math.round(v),interestCents:Math.round(interest),contribCents:contribs,since:base.date,taxPct:tax};
 }
+// Próximo vencimento de um depósito que renova sozinho pelo mesmo prazo.
+function nextMaturity(a,todayISO){if(!a.maturityDate)return '';if(!a.renewMonths)return a.maturityDate;let [y,m,d]=a.maturityDate.split('-').map(Number);const day=d;let iso=a.maturityDate,g=0;
+  while(iso<todayISO&&g++<1200){m+=a.renewMonths;while(m>12){m-=12;y++;}iso=`${y}-${String(m).padStart(2,'0')}-${String(Math.min(day,monthDays(y,m))).padStart(2,'0')}`;}return iso;}
 const currentValue=(a,todayISO)=>{const p=projectAsset(a,todayISO);return p?p.valueCents:a.valueCents;};
 const signedValue=(a,todayISO)=>(isLiability(a)?-1:1)*currentValue(a,todayISO);
 const canSeeAsset=(u,a)=>a.scope==='shared'||a.ownerId===u.id;
@@ -81,7 +85,7 @@ function generateRecurring(fin,todayISO,newId){
 }
 
 function view(fin,u,todayISO=new Date().toISOString().slice(0,10)){
-  const assets=fin.assets.filter(a=>!a.archived&&canSeeAsset(u,a)).map(a=>{const est=projectAsset(a,todayISO);return est?{...a,estimate:est}:a;});
+  const assets=fin.assets.filter(a=>!a.archived&&canSeeAsset(u,a)).map(a=>{const est=projectAsset(a,todayISO);const out=est?{...a,estimate:est}:{...a};if(a.renewMonths&&a.maturityDate)out.nextMaturity=nextMaturity(a,todayISO);return out;});
   const ids=new Set(assets.map(a=>a.id));
   const expenses=fin.transactions.filter(t=>t.kind==='expense'&&canSeeExpense(fin,u,t)).sort((a,b)=>b.transactionDate.localeCompare(a.transactionDate));
   const goals=fin.goals.map(g=>{const linked=(g.assetIds||[]).filter(id=>ids.has(id));const current=linked.length?assets.filter(a=>linked.includes(a.id)).reduce((n,a)=>n+signedValue(a,todayISO),0):(g.savedCents||0);return {...g,assetIds:linked,currentCents:current};});
@@ -99,6 +103,7 @@ function cleanAsset(b,a={}){const out={...a};
   if('ratePct'in b){if(b.ratePct===''||b.ratePct==null)out.ratePct=null;else{const r=Number(b.ratePct);if(!Number.isFinite(r)||r<-100||r>100)throw err(400,'Taxa inválida.');out.ratePct=Math.round(r*100)/100;}}
   if('contribCents'in b){if(b.contribCents==null||b.contribCents===0)out.contribCents=null;else out.contribCents=cents(b.contribCents);}
   if('contribDay'in b){if(b.contribDay==null||b.contribDay==='')out.contribDay=null;else{const d=Number(b.contribDay);if(!Number.isInteger(d)||d<1||d>31)throw err(400,'Dia inválido.');out.contribDay=d;}}
+  if('renewMonths'in b){if(b.renewMonths==null||b.renewMonths===''||b.renewMonths===0)out.renewMonths=null;else{const r=Number(b.renewMonths);if(!Number.isInteger(r)||r<1||r>120)throw err(400,'Prazo de renovação inválido.');out.renewMonths=r;}}
   if('taxPct'in b){if(b.taxPct===''||b.taxPct==null)out.taxPct=null;else{const t=Number(b.taxPct);if(!Number.isFinite(t)||t<0||t>100)throw err(400,'Imposto inválido.');out.taxPct=Math.round(t*100)/100;}}
   return out;}
 function setValue(a,valueCents,today){cents(valueCents,{allowZero:true});a.history=(a.history||[]).filter(h=>h.date!==today);a.history.push({date:today,valueCents});a.history.sort((x,y)=>x.date.localeCompare(y.date));if(a.history.length>120)a.history=a.history.slice(-120);a.valueCents=valueCents;a.updatedAt=new Date().toISOString();}
@@ -149,6 +154,6 @@ function handle(fin,u,method,path,b,ctx){
   return undefined;
 }
 const monthlyEquivalent=r=>Math.round(r.amountCents*(recurringMonths(r)?recurringMonths(r).length:12)/12);
-const api={projectAsset,currentValue,signedValue,isLiability,LIABILITY_TYPES,DEFAULT_TAX,recurringMonths,monthlyEquivalent,ASSET_TYPES,ASSET_GROUPS,EXPENSE_CATEGORIES,FIXED_CATEGORIES,migrate,generateRecurring,view,handle,canSeeAsset};
+const api={nextMaturity,projectAsset,currentValue,signedValue,isLiability,LIABILITY_TYPES,DEFAULT_TAX,recurringMonths,monthlyEquivalent,ASSET_TYPES,ASSET_GROUPS,EXPENSE_CATEGORIES,FIXED_CATEGORIES,migrate,generateRecurring,view,handle,canSeeAsset};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.CasaFinance=api;
 })(typeof window!=='undefined'?window:globalThis);
