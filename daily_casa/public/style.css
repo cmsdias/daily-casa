@@ -1980,3 +1980,11 @@ input.dp-native{position:absolute!important;width:1px!important;height:1px!impor
 .weather-modal .pref-row>div{min-width:0}
 .weather-modal .pref-row small{display:block;margin-top:2px}
 .weather-modal .modal-actions{margin-top:14px}
+/* 3.11.1 · Divisões das tarefas que não estão na lista. */
+.orphan-rooms{display:grid;gap:8px;margin:6px 0 14px;padding:14px;border-radius:16px;background:#f8eedd;color:#5a4318}
+.orphan-rooms .manager-help{margin:0;color:#6e5320}
+.orphan-row{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:10px;align-items:center}
+.orphan-row b{display:block;font-size:14px}
+.orphan-row small{font-size:12px;color:#6e5320}
+@media (max-width:480px){.orphan-row{grid-template-columns:minmax(0,1fr)}}
+.orphan-row select{padding-left:14px;min-height:44px}
