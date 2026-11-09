@@ -27,10 +27,15 @@ function createNotifications({ getDb, save, newId, todayISO, canSeeTask, isActiv
   const taskLink = t => ({ page: t.kind === 'routine' ? 'routines' : 'tasks', taskId: t.id });
 
   // Eventos de tarefas (chamados pelo servidor depois de cada alteração).
-  function taskAssigned(task, actor) {
-    if (!task.assignedTo || task.assignedTo === actor.id) return;
-    const p = db().people.find(x => x.id === task.assignedTo); if (!p || !canSeeTask(p, task)) return;
-    add(p.id, 'assigned', `${firstName(actor)} atribuiu-te uma tarefa`, task.title, taskLink(task));
+  // ids: a quem avisar (por omissão, o responsável principal). Nas tarefas partilhadas, cada pessoa nova é avisada.
+  function taskAssigned(task, actor, ids) {
+    const list = ids || (task.assignedTo ? [task.assignedTo] : []);
+    const others = [task.assignedTo, ...(task.coAssignees || [])].filter(Boolean).length > 1;
+    for (const id of list) {
+      if (!id || id === actor.id) continue;
+      const p = db().people.find(x => x.id === id); if (!p || !canSeeTask(p, task)) continue;
+      add(p.id, 'assigned', `${firstName(actor)} atribuiu-te uma tarefa${others ? ' partilhada' : ''}`, task.title, taskLink(task));
+    }
   }
   function taskRotated(task, actor) {
     const p = db().people.find(x => x.id === task.assignedTo); if (!p || p.id === actor.id || !canSeeTask(p, task)) return;
@@ -77,7 +82,7 @@ function createNotifications({ getDb, save, newId, todayISO, canSeeTask, isActiv
       }
     }
     for (const p of people) {
-      const mine = db().tasks.filter(t => t.status !== 'done' && t.assignedTo === p.id && t.dueDate && t.dueDate <= today && canSeeTask(p, t));
+      const mine = db().tasks.filter(t => t.status !== 'done' && (t.assignedTo === p.id || (t.coAssignees || []).includes(p.id)) && t.dueDate && t.dueDate <= today && canSeeTask(p, t));
       if (!mine.length) continue;
       const late = mine.filter(t => t.dueDate < today).length, now = mine.length - late;
       const parts = []; if (now) parts.push(`${now} para hoje`); if (late) parts.push(`${late} ${late === 1 ? 'atrasada' : 'atrasadas'}`);

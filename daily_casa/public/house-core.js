@@ -109,7 +109,7 @@ function urgency(t,today){let u=0;if(t.dueDate){const d=daysBetween(today,t.dueD
  u+=({P1:12,P2:6,P3:2,P4:0}[t.priority]||2);if(t.thisWeek)u+=3;if(t.status==='doing')u+=4;return u;}
 function planDay(tasks,{userId,minutes,today}){
  const horizon=addDays(today,7);
- const cand=(tasks||[]).filter(t=>t.status!=='done'&&t.status!=='waiting'&&(t.assignedTo===userId||!t.assignedTo)&&(t.kind!=='routine'||(t.dueDate&&t.dueDate<=horizon))&&(!t.dueDate||t.dueDate<=horizon||t.thisWeek));
+ const cand=(tasks||[]).filter(t=>t.status!=='done'&&t.status!=='waiting'&&(t.assignedTo===userId||(t.coAssignees||[]).includes(userId)||!t.assignedTo)&&(t.kind!=='routine'||(t.dueDate&&t.dueDate<=horizon))&&(!t.dueDate||t.dueDate<=horizon||t.thisWeek));
  const est=t=>Number.isFinite(t.estimatedMinutes)&&t.estimatedMinutes>0?t.estimatedMinutes:15;
  const sorted=cand.map(t=>({t,u:urgency(t,today)+(t.assignedTo===userId?3:0),m:est(t)})).sort((a,b)=>b.u-a.u||a.m-b.m);
  const pick=[];let used=0;for(const x of sorted){if(used+x.m<=minutes){pick.push(x.t);used+=x.m;}if(used>=minutes)break;}
@@ -127,7 +127,7 @@ function balance(tasks,history,people,{today,minutesDefault=15}={}){
  rows.forEach(r=>r.total=r.done+r.planned);rows.sort((a,b)=>b.total-a.total);
  let suggestion=null;
  if(rows.length>1){const hi=rows[0],lo=rows[rows.length-1];const gap=hi.total-lo.total;
-  if(gap>=60){const movable=(tasks||[]).filter(t=>t.status==='todo'&&t.assignedTo===hi.id&&t.visibility!=='private'&&!(Array.isArray(t.rotation)&&t.rotation.length>1)&&(t.dueDate?t.dueDate>=today&&t.dueDate<=end:t.thisWeek));
+  if(gap>=60){const movable=(tasks||[]).filter(t=>t.status==='todo'&&t.assignedTo===hi.id&&!(t.coAssignees||[]).length&&t.visibility!=='private'&&!(Array.isArray(t.rotation)&&t.rotation.length>1)&&(t.dueDate?t.dueDate>=today&&t.dueDate<=end:t.thisWeek));
    const best=movable.map(t=>({t,d:Math.abs(est(t)-gap/2)})).sort((a,b)=>a.d-b.d)[0];
    if(best&&est(best.t)<gap)suggestion={taskId:best.t.id,title:best.t.title,from:hi.id,to:lo.id,minutes:est(best.t)};}}
  return {start,end,rows,suggestion};

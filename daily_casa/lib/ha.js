@@ -48,7 +48,7 @@ function createHa({getDb,todayISO,nowHM,save=()=>{},onError=console.error,fetchI
   const visibleTo=(p,t)=>t.visibility!=='private'||t.createdBy===p.id;
   function personSummary(p){
     const today=todayISO();
-    const mine=db().tasks.filter(t=>t.status!=='done'&&t.assignedTo===p.id&&visibleTo(p,t));
+    const mine=db().tasks.filter(t=>t.status!=='done'&&(t.assignedTo===p.id||(t.coAssignees||[]).includes(p.id))&&visibleTo(p,t));
     return {overdue:mine.filter(t=>t.dueDate&&t.dueDate<today),today:mine.filter(t=>t.dueDate===today)};
   }
   // Resumo diário à hora definida: tarefas atrasadas e para hoje de cada pessoa com notificações ligadas.
@@ -65,10 +65,11 @@ function createHa({getDb,todayISO,nowHM,save=()=>{},onError=console.error,fetchI
       try{await notify(p.id,`Bom dia, ${p.name.split(' ')[0]}: ${parts.join(' e ')}`,names,{tag:'resumo-diario'});}catch(e){onError('HA resumo:',e.message);}
     }
   }
-  async function taskAssigned(task,actor){
-    const s=settings();if(!available()||!s.events?.assigned||!task.assignedTo||task.assignedTo===actor.id)return;
-    const p=db().people.find(x=>x.id===task.assignedTo);if(!p||p.active===false||!visibleTo(p,task))return;
-    try{await notify(p.id,'Nova tarefa para ti',`${task.title}${task.dueDate?' · até '+task.dueDate.split('-').reverse().join('/'):''}\nAtribuída por ${actor.name}`,{tag:'tarefa-'+task.id,type:'assigned'});}catch(e){onError('HA atribuição:',e.message);}
+  async function taskAssigned(task,actor,ids){
+    const s=settings();if(!available()||!s.events?.assigned)return;
+    for(const id of (ids||[task.assignedTo])){if(!id||id===actor.id)continue;
+    const p=db().people.find(x=>x.id===id);if(!p||p.active===false||!visibleTo(p,task))continue;
+    try{await notify(p.id,'Nova tarefa para ti',`${task.title}${task.dueDate?' · até '+task.dueDate.split('-').reverse().join('/'):''}\nAtribuída por ${actor.name}`,{tag:'tarefa-'+task.id,type:'assigned'});}catch(e){onError('HA atribuição:',e.message);}}
   }
   function sensorStates(){
     const today=todayISO();
