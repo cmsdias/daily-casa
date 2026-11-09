@@ -1,3 +1,7 @@
+# 3.10.2 — Compras sem apagar por engano
+
+- A lista de compras deixa de ter o botão × em cada artigo. Para apagar, toca no nome do artigo e usa «Eliminar».
+
 # 3.10.1 — Acertos de espaçamento
 
 - O aviso de nova versão tem mais espaço entre a etiqueta e o título.
