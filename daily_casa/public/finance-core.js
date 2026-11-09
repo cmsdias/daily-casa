@@ -40,22 +40,28 @@ function migrate(fin){
 // · créditos: no dia da prestação soma-se o juro do mês (TAN/12) e abate-se a prestação.
 // Devolve null quando não há taxa nem entregas (o valor é só o que se regista à mão).
 const addDays=(iso,n)=>new Date(Date.parse(iso+'T12:00:00Z')+n*86400000).toISOString().slice(0,10);
-function projectAsset(a,todayISO){
-  const rate=Number(a.ratePct)||0,contrib=Number(a.contribCents)||0;if(!rate&&!contrib)return null;
+// 3.11.2: as despesas «pagas de» uma conta descontam-se no valor estimado, desde o último valor registado
+// (as de datas anteriores já estão nesse valor; no próprio dia, contam as registadas depois dele).
+function projectAsset(a,todayISO,txs=[]){
+  const rate=Number(a.ratePct)||0,contrib=Number(a.contribCents)||0;
   const h=(a.history||[]).filter(x=>x.date<=todayISO);const base=h.length?h[h.length-1]:{date:todayISO,valueCents:a.valueCents||0};
+  const debt0=isLiability(a);
+  const spentList=debt0?[]:(txs||[]).filter(t=>t.assetId===a.id&&t.kind==='expense'&&t.transactionDate<=todayISO&&(t.transactionDate>base.date||(t.transactionDate===base.date&&base.at&&t.createdAt>base.at)));
+  if(!rate&&!contrib&&!spentList.length)return null;
+  const spentOn={};let spentBase=0;for(const t of spentList){if(t.transactionDate===base.date)spentBase+=t.amountCents;else spentOn[t.transactionDate]=(spentOn[t.transactionDate]||0)+t.amountCents;}
   const tax=a.taxPct!=null?Number(a.taxPct):(DEFAULT_TAX[a.type]||0);const debt=isLiability(a);const day=Math.min(Math.max(Number(a.contribDay)||1,1),31);
   // Sem renovação automática, deixa de render no vencimento; com renovação, continua (juros capitalizados).
   const stop=a.maturityDate&&!debt&&!a.renewMonths&&a.maturityDate<todayISO?a.maturityDate:todayISO;
-  let v=base.valueCents,interest=0,contribs=0,d=base.date,guard=0;
-  while(d<stop&&guard++<3700){d=addDays(d,1);const [y,m,dd]=d.split('-').map(Number);const payDay=Math.min(day,monthDays(y,m))===dd;
+  let v=base.valueCents-spentBase,interest=0,contribs=0,d=base.date,guard=0;const lastSpent=Object.keys(spentOn).sort().pop()||'';
+  while((d<stop||d<lastSpent)&&guard++<3700){d=addDays(d,1);if(spentOn[d])v-=spentOn[d];if(d>stop)continue;const [y,m,dd]=d.split('-').map(Number);const payDay=Math.min(day,monthDays(y,m))===dd;
     if(debt){if(payDay&&v>0){const i=v*rate/100/12;interest+=i;v=Math.max(0,v+i-contrib);contribs+=contrib;}}
     else{const i=v*rate/100/365*(1-tax/100);v+=i;interest+=i;if(payDay&&contrib){v+=contrib;contribs+=contrib;}}}
-  return {valueCents:Math.round(v),interestCents:Math.round(interest),contribCents:contribs,since:base.date,taxPct:tax};
+  return {valueCents:Math.round(v),interestCents:Math.round(interest),contribCents:contribs,spentCents:spentList.reduce((n,t)=>n+t.amountCents,0),spentCount:spentList.length,since:base.date,taxPct:tax};
 }
 // Próximo vencimento de um depósito que renova sozinho pelo mesmo prazo.
 function nextMaturity(a,todayISO){if(!a.maturityDate)return '';if(!a.renewMonths)return a.maturityDate;let [y,m,d]=a.maturityDate.split('-').map(Number);const day=d;let iso=a.maturityDate,g=0;
   while(iso<todayISO&&g++<1200){m+=a.renewMonths;while(m>12){m-=12;y++;}iso=`${y}-${String(m).padStart(2,'0')}-${String(Math.min(day,monthDays(y,m))).padStart(2,'0')}`;}return iso;}
-const currentValue=(a,todayISO)=>{const p=projectAsset(a,todayISO);return p?p.valueCents:a.valueCents;};
+const currentValue=(a,todayISO,txs)=>{if(a.estimate)return a.estimate.valueCents;const p=projectAsset(a,todayISO,txs);return p?p.valueCents:a.valueCents;};
 const signedValue=(a,todayISO)=>(isLiability(a)?-1:1)*currentValue(a,todayISO);
 const canSeeAsset=(u,a)=>a.scope==='shared'||a.ownerId===u.id;
 function canSeeExpense(fin,u,t){if(!t.assetId)return true;const a=fin.assets.find(x=>x.id===t.assetId);return !a||canSeeAsset(u,a);}
@@ -85,7 +91,7 @@ function generateRecurring(fin,todayISO,newId){
 }
 
 function view(fin,u,todayISO=new Date().toISOString().slice(0,10)){
-  const assets=fin.assets.filter(a=>!a.archived&&canSeeAsset(u,a)).map(a=>{const est=projectAsset(a,todayISO);const out=est?{...a,estimate:est}:{...a};if(a.renewMonths&&a.maturityDate)out.nextMaturity=nextMaturity(a,todayISO);return out;});
+  const assets=fin.assets.filter(a=>!a.archived&&canSeeAsset(u,a)).map(a=>{const est=projectAsset(a,todayISO,fin.transactions);const out=est?{...a,estimate:est}:{...a};if(a.renewMonths&&a.maturityDate)out.nextMaturity=nextMaturity(a,todayISO);return out;});
   const ids=new Set(assets.map(a=>a.id));
   const expenses=fin.transactions.filter(t=>t.kind==='expense'&&canSeeExpense(fin,u,t)).sort((a,b)=>b.transactionDate.localeCompare(a.transactionDate));
   const goals=fin.goals.map(g=>{const linked=(g.assetIds||[]).filter(id=>ids.has(id));const current=linked.length?assets.filter(a=>linked.includes(a.id)).reduce((n,a)=>n+signedValue(a,todayISO),0):(g.savedCents||0);return {...g,assetIds:linked,currentCents:current};});
@@ -110,7 +116,7 @@ function cleanAsset(b,a={}){const out={...a};
   if('renewMonths'in b){if(b.renewMonths==null||b.renewMonths===''||b.renewMonths===0)out.renewMonths=null;else{const r=Number(b.renewMonths);if(!Number.isInteger(r)||r<1||r>120)throw err(400,'Prazo de renovação inválido.');out.renewMonths=r;}}
   if('taxPct'in b){if(b.taxPct===''||b.taxPct==null)out.taxPct=null;else{const t=Number(b.taxPct);if(!Number.isFinite(t)||t<0||t>100)throw err(400,'Imposto inválido.');out.taxPct=Math.round(t*100)/100;}}
   return out;}
-function setValue(a,valueCents,today){cents(valueCents,{allowZero:true});a.history=(a.history||[]).filter(h=>h.date!==today);a.history.push({date:today,valueCents});a.history.sort((x,y)=>x.date.localeCompare(y.date));if(a.history.length>120)a.history=a.history.slice(-120);a.valueCents=valueCents;a.updatedAt=new Date().toISOString();}
+function setValue(a,valueCents,today){cents(valueCents,{allowZero:true});a.history=(a.history||[]).filter(h=>h.date!==today);a.history.push({date:today,valueCents,at:new Date().toISOString()});a.history.sort((x,y)=>x.date.localeCompare(y.date));if(a.history.length>120)a.history=a.history.slice(-120);a.valueCents=valueCents;a.updatedAt=new Date().toISOString();}
 function cleanRecurring(b,r={}){const out={...r};
   if(!r.id||'name'in b){const n=str(b.name,100);if(!n)throw err(400,'Indica a despesa.');out.name=n;}
   if(!r.id||'amountCents'in b)out.amountCents=cents(b.amountCents);
