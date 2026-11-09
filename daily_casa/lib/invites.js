@@ -43,4 +43,17 @@ function inviteEmail({ inviter, name, link }) {
     foot: `A ligação é válida durante 7 dias. Depois de entrares, junta a app ao ecrã principal:<br><b>iOS</b> (Safari): Partilhar › Adicionar ao ecrã principal.<br><b>Android</b> (Chrome): menu ⋮ › Adicionar ao ecrã principal.<br><span style="color:#8A948D;word-break:break-all">Se o botão não funcionar: ${escH(link)}</span>` });
   return { subject, text, html };
 }
-module.exports = { createInvites, inviteEmail, ROLES };
+// Email do acesso (3.9.6): conta criada pelo administrador com palavra-passe temporária; a pessoa escolhe a definitiva.
+function accessEmail({ inviter, name, link, days = 7 }) {
+  const { brandHtml, escH } = require('./mailer');
+  const who = String(inviter || 'O administrador').split(' ')[0];
+  const hello = name ? `Olá ${String(name).split(' ')[0]},` : 'Olá,';
+  const subject = `${who} criou a tua conta no Daily Casa`;
+  const text = `${hello}\n\n${who} criou a tua conta no Daily Casa, onde a casa organiza tarefas, rotinas e compras.\n\nAbre esta ligação para entrares e escolheres a tua palavra-passe:\n${link}\n\nA ligação é válida durante ${days} dias e só funciona uma vez. Se não estavas à espera deste email, ignora-o.\n\nDaily Casa`;
+  const html = brandHtml({ title: 'A tua conta está pronta.', preheader: `${who} criou a tua conta no Daily Casa`,
+    lead: `${escH(hello)} <b>${escH(who)}</b> criou a tua conta no Daily Casa, onde a casa organiza tarefas, rotinas e compras.<br><br>Toca no botão para entrares e escolheres a tua palavra-passe.`,
+    cta: { label: 'Entrar no Daily Casa', url: link },
+    foot: `A ligação é válida durante ${days} dias e só funciona uma vez. Se não estavas à espera deste email, ignora-o.<br><span style="color:#8A948D;word-break:break-all">Se o botão não funcionar: ${escH(link)}</span>` });
+  return { subject, text, html };
+}
+module.exports = { createInvites, inviteEmail, accessEmail, ROLES };

@@ -1,3 +1,9 @@
+# 3.9.6 — Enviar o acesso por email
+
+- Em Pessoas, quem ainda tem a palavra-passe temporária tem o botão «Enviar acesso por email».
+- A pessoa recebe um email com uma ligação de uso único, válida durante 7 dias, para escolher a palavra-passe definitiva e entrar logo.
+- A palavra-passe temporária nunca vai no email e deixa de valer; o administrador é avisado quando a pessoa entra.
+
 # 3.9.5 — Aniversários por extenso
 
 - Em Pessoas, o aniversário mostra o mês por extenso (ex.: 7 de março).

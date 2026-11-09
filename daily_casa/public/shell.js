@@ -354,6 +354,32 @@ async function renderInvite(token){
   catch(err){document.getElementById('auth-error').textContent=err.message;b.disabled=false;}});
 }
 
+/* 3.9.6 · Acesso por email: conta criada pelo administrador com palavra-passe temporária. */
+function accessBlock(p,other,active){
+ if(!isAdmin()||!other||!active||!p.mustChangePassword)return '';
+ if(!p.email)return `<p class="access-note">Sem email: acrescenta-o em Editar para poderes enviar o acesso.</p>`;
+ const when=d=>new Date(d).toLocaleString('pt-PT',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'});
+ const valid=p.accessExpiresAt&&Date.parse(p.accessExpiresAt)>Date.now();
+ return `<div class="access-row"><button class="button ${p.accessSentAt?'':'primary'}" type="button" data-action="person-access-email" data-id="${esc(p.id)}">${ico('mail')} ${p.accessSentAt?'Reenviar acesso por email':'Enviar acesso por email'}</button><p class="access-note">${p.accessSentAt?(valid?`Enviado a ${esc(when(p.accessSentAt))} · válido até ${esc(new Date(p.accessExpiresAt).toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'long'}))}.`:'A ligação enviada expirou. Envia outra.'):'A pessoa recebe uma ligação para escolher a palavra-passe, válida durante 7 dias.'}</p></div>`;}
+actionHandlers.push(async(name,el)=>{if(name!=='person-access-email')return false;
+ const p=people().find(x=>x.id===el.dataset.id);if(!p)return true;
+ if(p.accessSentAt&&!await confirmDialog({title:'Enviar uma nova ligação?',message:`A ligação enviada antes a ${p.email} deixa de funcionar.`,confirmLabel:'Reenviar'}))return true;
+ if(demo){toast(`Na demonstração não se enviam emails (seria enviado para ${p.email}).`);return true;}
+ el.disabled=true;try{const r=await api('/api/people/'+encodeURIComponent(p.id)+'/access-email','POST',{});store.people=r.people;render();toast(`Email enviado para ${p.email}.`);}catch(e){toast(e.message);el.disabled=false;}return true;});
+// Página aberta pela ligação do email: escolhe a palavra-passe definitiva e entra.
+async function renderAccess(token){
+ const shell=(inner)=>`<div class="auth-layout"><section class="auth-aside"><div class="brand brand-primary"><img class="brand-primary-logo" src="logo-primary-light.svg" alt="Daily Casa" /></div><div><h1>A casa em dia,<br/><em>todos os dias.</em></h1><p>Um espaço comum para organizar pendências, dividir tarefas e celebrar o que já está feito.</p></div><small>O teu espaço, os teus dados, o teu ritmo.</small></section><section class="auth-form"><div class="auth-inner"><img class="auth-mobile-logo" src="logo-primary-dark.svg" alt="Daily Casa" />${inner}</div></section></div>`;
+ document.querySelector('meta[name=theme-color]')?.setAttribute('content','#17261E');
+ let acc;try{acc=await api('/api/access/'+encodeURIComponent(token));}catch(e){app.innerHTML=shell(`<div class="eyebrow">DAILY CASA · ACESSO</div><h2>Ligação indisponível.</h2><p>${esc(e.message)}</p><a class="button primary auth-submit" href="./">${ico('login')}<span>Ir para o login</span></a>`);return;}
+ const first=String(acc.name||'').split(' ')[0];
+ app.innerHTML=shell(`<div class="eyebrow">DAILY CASA · ACESSO</div><h2>Olá, ${esc(first)}.</h2><p>Escolhe a palavra-passe que vais usar daqui em diante.</p><form id="access-accept"><div class="access-who">${avatarHtml({name:acc.name},'')}<span><b>${esc(acc.email)}</b><small>${esc(acc.roleLabel)}</small></span></div><input type="email" name="username" autocomplete="username" value="${esc(acc.email)}" hidden readonly/><div class="field"><label for="ac-pass">Nova palavra-passe</label><input id="ac-pass" name="password" type="password" autocomplete="new-password" minlength="10" required placeholder="Mínimo de 10 caracteres"/></div><div class="field"><label for="ac-pass2">Repetir palavra-passe</label><input id="ac-pass2" name="password2" type="password" autocomplete="new-password" minlength="10" required/></div><label class="remember-row"><input type="checkbox" name="remember" checked/><span class="remember-box" aria-hidden="true"></span><span>Manter sessão iniciada</span></label><button class="button primary auth-submit" type="submit">${ico('check')}<span>Guardar e entrar</span></button><div class="auth-message" id="auth-error"></div></form>`);
+ const f=document.getElementById('access-accept');f.querySelector('#ac-pass').focus();
+ f.addEventListener('submit',async e=>{e.preventDefault();const b=f.querySelector('[type=submit]');const v=Object.fromEntries(new FormData(f));
+  if(v.password!==v.password2){document.getElementById('auth-error').textContent='As duas palavras-passe não são iguais.';return;}
+  b.disabled=true;try{await api('/api/access/'+encodeURIComponent(token),'POST',{password:v.password,remember:!!v.remember});location.replace(location.pathname);}
+  catch(err){document.getElementById('auth-error').textContent=err.message;b.disabled=false;}});
+}
+
 /* 3.6 · «Ver como» (administrador): esconde controlos e páginas para ver a app como gestor, morador ou colaborador.
    É só na interface deste dispositivo: os dados e as permissões no servidor continuam os do administrador. */
 const VIEW_ROLES={manager:'Gestor',resident:'Morador',collaborator:'Colaborador'};

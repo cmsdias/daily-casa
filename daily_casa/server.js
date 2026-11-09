@@ -82,7 +82,7 @@ const MAILER=MAIL.createMailer({getOptions:()=>({...addonOptions(),...(process.e
 const RS=Number(process.env.RATE_SCALE||1);
 const RL={ip:createRateLimiter({perMin:600*RS,burst:300*RS}),read:createRateLimiter({perMin:240*RS,burst:120*RS}),write:createRateLimiter({perMin:90*RS,burst:45*RS}),heavy:createRateLimiter({perMin:20/60*RS,burst:10*RS})};
 // Pedidos «pesados»: enviam email ou push, recebem ficheiros ou mexem em cópias de segurança.
-const HEAVY_RE=/^\/api\/(invites(\/[^/]+\/resend)?|security\/mail-test|push\/test|ha\/test|import|backups(\/.*)?|(tasks|incidents)\/[^/]+\/photos|equipment\/[^/]+\/docs)$/;
+const HEAVY_RE=/^\/api\/(people\/[^/]+\/access-email|invites(\/[^/]+\/resend)?|security\/mail-test|push\/test|ha\/test|import|backups(\/.*)?|(tasks|incidents)\/[^/]+\/photos|equipment\/[^/]+\/docs)$/;
 function rateCheck(req,p){
   const ip=NET.info(req).client;const tok=((req.headers.cookie||'').match(/(?:^|;\s*)casa_session=([^;]+)/)||[])[1];
   const who=tok?'s:'+crypto.createHash('sha256').update(tok).digest('base64url').slice(0,22):'ip:'+ip;
@@ -111,6 +111,11 @@ const NOTIF_TYPES=['assigned','rotation','done','due','approval','incident','equ
 const wantsPush=(userId,type)=>type==='security'||db.people.find(x=>x.id===userId)?.notifPrefs?.[type]!==false;
 // 3.6 · Convites por email.
 const INV=require('./lib/invites');const INVITES=INV.createInvites({getDb:()=>db,save,newId:()=>id()});
+// 3.9.6: ligação de acesso para contas com palavra-passe temporária (uso único, 7 dias; só se guarda o hash).
+const ACCESS_DAYS=7;const accessHash=t=>crypto.createHash('sha256').update(String(t)).digest('hex');
+function accessLink(req,token){return inviteLink(req,token).replace('?convite=','?acesso=');}
+function findAccess(token){if(!/^[A-Za-z0-9_-]{40,64}$/.test(String(token||'')))return null;const h=accessHash(token);
+  return db.people.find(q=>isActive(q)&&q.mustChangePassword&&q.activation?.tokenHash&&Date.parse(q.activation.expiresAt)>Date.now()&&crypto.timingSafeEqual(Buffer.from(q.activation.tokenHash),Buffer.from(h)))||null;}
 function inviteLink(req,token){const base=publicUrl()||NET.info(req).origin||('http://'+String(req.headers.host||'').split(',')[0].trim());return `${base.replace(/\/+$/,'')}/?convite=${token}`;}
 function uniqueUsername(email,name){const base=usernameFrom(email,name);let u=base,n=2;while(db.people.some(p=>p.username===u))u=(base.slice(0,36)+n++);return u;}
 const notif=createNotifications({getDb:()=>db,save,newId:()=>id(),todayISO:()=>dateInTz(new Date()),canSeeTask:(u,t)=>canSeeTask(u,t),isActive:u=>isActive(u),roleOf:u=>roleOf(u),
@@ -203,14 +208,14 @@ function usernameFrom(email,name){let base=(String(email||'').split('@')[0]||Str
 function applyProfile(target,b){
  if('name'in b){const name=cleanStr(b.name,80);if(name.length<2)throw Error('O nome deve ter pelo menos 2 caracteres.');target.name=name;}
  if('username'in b)target.username=cleanUsername(b.username,target.id);
- if('email'in b){const e=cleanEmail(b.email);if(!e&&target.email)throw Error('O email é usado para entrar: não pode ficar em branco.');target.email=uniqueEmail(e,target.id);}
+ if('email'in b){const e=cleanEmail(b.email);if(!e&&target.email)throw Error('O email é usado para entrar: não pode ficar em branco.');{const ne=uniqueEmail(e,target.id);if(ne!==target.email)delete target.activation;target.email=ne;}}
  if('pushOff'in b)target.pushOff=b.pushOff===true;
  // 3.5 · Tipos de notificação que a pessoa quer receber no telemóvel (o sino mostra sempre tudo).
  if(b.notifPrefs&&typeof b.notifPrefs==='object'&&!Array.isArray(b.notifPrefs)){const prefs={...(target.notifPrefs||{})};for(const [k,v] of Object.entries(b.notifPrefs))if(NOTIF_TYPES.includes(k))prefs[k]=v!==false;target.notifPrefs=prefs;}
  if('phone'in b)target.phone=cleanPhone(b.phone);
  if('birthDate'in b)target.birthDate=cleanBirth(b.birthDate);
  if('photo'in b)target.photo=cleanPhoto(b.photo);}
-function publicPeople(){return db.people.map(({id,name,username,role,avatar,photo,active,accessDays,mustChangePassword})=>({id,name,username,role:role==='member'?'resident':role,avatar:avatar||'●',photo:photo||'',active:active!==false,accessDays:Array.isArray(accessDays)?accessDays:[],mustChangePassword:!!mustChangePassword}));}
+function publicPeople(){return db.people.map(({id,name,username,role,avatar,photo,active,accessDays,mustChangePassword,activation})=>({id,name,username,role:role==='member'?'resident':role,avatar:avatar||'●',photo:photo||'',active:active!==false,accessDays:Array.isArray(accessDays)?accessDays:[],mustChangePassword:!!mustChangePassword,...(mustChangePassword&&activation?{accessSentAt:activation.sentAt,accessExpiresAt:activation.expiresAt}:{})}));}
 // Fotografia de perfil: imagem pequena (redimensionada no browser) guardada como data URL.
 const PHOTO_MAX=200_000;
 function cleanPhoto(v){if(v===null||v==='')return '';if(typeof v!=='string'||v.length>PHOTO_MAX||!/^data:image\/(jpeg|png|webp);base64,[A-Za-z0-9+/]+=*$/.test(v))throw Error('Fotografia inválida ou demasiado grande.');return v;}
@@ -333,6 +338,15 @@ const server=http.createServer(async (req,res)=>{
       return send(res,200,{user:{id:u.id,name:u.name,role:roleOf(u)}},{'Set-Cookie':cookie(req,session(u))});
     }
     // Aceitar um convite (sem sessão): ver os dados do convite e criar a conta.
+    {const am=p.match(/^\/api\/access\/([A-Za-z0-9_-]{40,64})$/);if(am){
+      const ip=NET.info(req).client;const st=LIM.reset.status('inv:'+ip);if(st.blocked)return tooMany(res,st);
+      const q=findAccess(am[1]);if(!q){LIM.reset.fail('inv:'+ip);return fail(res,404,'Esta ligação já não é válida. Pede ao administrador para te enviar outra.');}
+      if(req.method==='GET')return send(res,200,{name:q.name,email:q.email||'',roleLabel:INV.ROLES[q.role]||(q.role==='admin'?'Administrador':'Morador')});
+      if(req.method==='POST'){const pw=String(b.password||'');if(pw.length<10)return fail(res,400,'A palavra-passe deve ter pelo menos 10 caracteres.');
+        const by=db.people.find(x=>x.id===q.activation.by);q.passwordHash=passwordHash(pw);q.mustChangePassword=false;delete q.activation;q.authVersion=(q.authVersion||1)+1;LIM.account.clear((q.email||q.username||'').toLowerCase());logAction(q,'access.accept',q.id);
+        if(by&&isActive(by)&&by.id!==q.id)notif.add(by.id,'security',`${q.name.split(' ')[0]} entrou no Daily Casa`,'Já escolheu a palavra-passe definitiva.',{page:'people'});
+        const remember=b.remember!==false;save();return send(res,200,{user:{id:q.id,name:q.name,role:q.role}},{'Set-Cookie':cookie(req,session(q,remember),remember)});}
+      return fail(res,405,'Método não permitido.');}}
     {const im=p.match(/^\/api\/invites\/([A-Za-z0-9_-]{40,64})(\/accept)?$/);if(im){
       const ip=NET.info(req).client;const st=LIM.reset.status('inv:'+ip);if(st.blocked)return tooMany(res,st);
       const x=INVITES.find(im[1]);if(!x){LIM.reset.fail('inv:'+ip);return fail(res,404,'Este convite já não é válido. Pede ao administrador para te enviar outro.');}
@@ -612,6 +626,17 @@ const server=http.createServer(async (req,res)=>{
       if(target.id===user.id&&b.role!=='admin')return fail(res,403,'Não podes retirar o teu próprio acesso de administrador.');if(target.role==='admin'&&b.role!=='admin'&&db.people.filter(x=>roleOf(x)==='admin').length===1)return fail(res,403,'É obrigatório manter um administrador.');
       target.role=b.role;target.authVersion=(target.authVersion||1)+1;logAction(user,'person.role',target.id);save();return send(res,200,{people:peopleFor(user)});
     }
+    {const ae=p.match(/^\/api\/people\/([^/]+)\/access-email$/);if(ae&&req.method==='POST'){
+      if(roleOf(user)!=='admin')return fail(res,403,'Apenas administradores.');
+      const q=db.people.find(x=>x.id===ae[1]);if(!q)return fail(res,404,'Pessoa não encontrada.');
+      if(!isActive(q))return fail(res,400,'Esta conta está desativada.');if(!q.mustChangePassword)return fail(res,400,'Esta pessoa já escolheu a palavra-passe.');
+      if(!q.email)return fail(res,400,'Esta pessoa não tem email. Acrescenta-o em Editar.');
+      if(!MAILER.status().configured)return fail(res,400,'O envio de email não está configurado nas opções do add-on.');
+      const token=crypto.randomBytes(32).toString('base64url');const prev=q.activation;
+      q.activation={tokenHash:accessHash(token),by:user.id,sentAt:new Date().toISOString(),expiresAt:new Date(Date.now()+ACCESS_DAYS*86400_000).toISOString()};
+      try{await MAILER.send({to:q.email,...INV.accessEmail({inviter:user.name,name:q.name,link:accessLink(req,token),days:ACCESS_DAYS})});}
+      catch(e){if(prev)q.activation=prev;else delete q.activation;return fail(res,502,'Não foi possível enviar o email: '+e.message);}
+      logAction(user,'access.send',q.id);save();return send(res,200,{people:publicPeople(),sentAt:q.activation.sentAt,expiresAt:q.activation.expiresAt});}}
     if(p==='/api/invites'||/^\/api\/invites\/[0-9a-f-]{36}(\/resend)?$/.test(p)){
       if(roleOf(user)!=='admin')return fail(res,403,'Apenas administradores.');
       const deliver=async(r)=>{const link=inviteLink(req,r.token);let mailed=false,mailError='';
@@ -681,7 +706,7 @@ const server=http.createServer(async (req,res)=>{
       if(String(b.password||'').length<10)return fail(res,400,'A nova palavra-passe deve ter pelo menos 10 caracteres.');
       if(target.id===user.id&&!verifyPw(String(b.currentPassword||'').slice(0,200),target.passwordHash))return fail(res,403,'A palavra-passe atual não está correta.');
       if(target.id===user.id&&String(b.password)===String(b.currentPassword||''))return fail(res,400,'A nova palavra-passe tem de ser diferente da atual.');
-      target.passwordHash=passwordHash(b.password);target.authVersion=(target.authVersion||1)+1;target.mustChangePassword=target.id!==user.id;logAction(user,'person.password',target.id);save();
+      target.passwordHash=passwordHash(b.password);target.authVersion=(target.authVersion||1)+1;target.mustChangePassword=target.id!==user.id;delete target.activation;logAction(user,'person.password',target.id);save();
       return send(res,200,{ok:true},target.id===user.id?{'Set-Cookie':cookie(req,session(target,tokenRemember(req)),tokenRemember(req))}:{});
     }
     return fail(res,404,'Rota não encontrada.');

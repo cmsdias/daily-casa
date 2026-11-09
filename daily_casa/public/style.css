@@ -1899,3 +1899,9 @@ details.task-when:not([open])>summary{margin-bottom:4px}
 /* 3.9.3 · Campos selecionados: um só contorno colorido (a margem), sem anel exterior nem segundo traço. */
 :is(input,select,textarea):not([type="checkbox"]):not([type="radio"]):not([type="file"]):is(:focus,:focus-visible){outline:0!important;box-shadow:none!important;border-color:var(--input-active)!important}
 .search:focus-within{box-shadow:none!important;border-color:var(--input-active)}
+/* 3.9.6 · Acesso por email (Pessoas e página de entrada). */
+.access-row{display:grid;gap:6px;justify-items:start;margin:4px 0 10px}
+.access-note{margin:0;font-size:12.5px;line-height:1.45;color:#5f6a62}
+.access-who{display:flex;gap:10px;align-items:center;background:#f0efe8;border-radius:14px;padding:10px 12px;margin:0 0 14px}
+.access-who b{display:block;font-size:14px;overflow-wrap:anywhere}
+.access-who small{font-size:12px;color:#6b746d}
