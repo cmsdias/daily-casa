@@ -1297,7 +1297,7 @@ details>summary:focus-visible,.task-more:focus-visible{outline:2px solid var(--b
 .seg-control button[aria-checked="true"]{background:#fff;color:var(--brand-green);box-shadow:0 1px 3px #0000001f}
 .seg-control button:focus-visible{outline:2px solid var(--brand-gold);outline-offset:2px}
 /* Sino de notificações */
-.mobile-head-actions{display:flex;align-items:center;gap:6px}
+.mobile-head-actions{display:flex;align-items:center;gap:12px}
 .bell-btn{position:relative}
 .bell-btn svg{width:21px;height:21px}
 .mobile-header .bell-btn{width:44px;height:44px;border-radius:50%;background:transparent;border:0;color:var(--brand-green)}
