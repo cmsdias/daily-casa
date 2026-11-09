@@ -1,3 +1,7 @@
+# 3.9.7 — Cartões de pessoas mais limpos
+
+- Debaixo do nome fica só o perfil; o email aparece em baixo, junto do aniversário e do telefone.
+
 # 3.9.6 — Enviar o acesso por email
 
 - Em Pessoas, quem ainda tem a palavra-passe temporária tem o botão «Enviar acesso por email».
