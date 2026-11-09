@@ -30,17 +30,17 @@ function createInvites({ getDb, save, newId }) {
   return { pending, create, resend, cancel, find, markAccepted, cancelForEmail, view, ROLES, TOKEN_RE };
 }
 
-// Email do convite (texto e HTML no modelo da marca).
-function inviteEmail({ inviter, name, roleLabel, link }) {
+// Email do convite (texto e HTML no modelo da marca). O perfil não é mencionado: vê-se dentro da app.
+function inviteEmail({ inviter, name, link }) {
   const { brandHtml, escH } = require('./mailer');
   const who = String(inviter || 'O administrador').split(' ')[0];
   const hello = name ? `Olá ${String(name).split(' ')[0]},` : 'Olá,';
   const subject = `${who} convidou-te para a Daily Casa`;
-  const text = `${hello}\n\n${who} convidou-te para a Daily Casa, a app onde a casa organiza tarefas, rotinas e compras (perfil: ${roleLabel}).\n\nPara criares a tua conta, abre esta ligação e escolhe uma palavra-passe:\n${link}\n\nA ligação é válida durante 7 dias.\n\nDepois de entrares, no iPhone toca em Partilhar › Adicionar ao ecrã principal para teres a app sempre à mão.\n\nDaily Casa`;
+  const text = `${hello}\n\n${who} convidou-te para a Daily Casa, a app onde a casa organiza tarefas, rotinas e compras.\n\nPara criares a tua conta, abre esta ligação e escolhe uma palavra-passe:\n${link}\n\nA ligação é válida durante 7 dias.\n\nPara teres a app sempre à mão, depois de entrares:\n- iOS (Safari): toca em Partilhar › Adicionar ao ecrã principal.\n- Android (Chrome): toca no menu ⋮ › Adicionar ao ecrã principal (ou Instalar app).\n\nDaily Casa`;
   const html = brandHtml({ title: 'Tens lugar na casa.', preheader: `${who} convidou-te para a Daily Casa`,
-    lead: `${escH(hello)} <b>${escH(who)}</b> convidou-te para a Daily Casa, onde a casa organiza tarefas, rotinas e compras. Entras como <b>${escH(String(roleLabel).toLowerCase())}</b>.`,
+    lead: `${escH(hello)} <b>${escH(who)}</b> convidou-te para a Daily Casa, onde a casa organiza tarefas, rotinas e compras.`,
     cta: { label: 'Criar a minha conta', url: link },
-    foot: `A ligação é válida durante 7 dias. Depois de entrares, no iPhone toca em <b>Partilhar › Adicionar ao ecrã principal</b>.<br><span style="color:#8A948D;word-break:break-all">Se o botão não funcionar: ${escH(link)}</span>` });
+    foot: `A ligação é válida durante 7 dias. Depois de entrares, junta a app ao ecrã principal:<br><b>iOS</b> (Safari): Partilhar › Adicionar ao ecrã principal.<br><b>Android</b> (Chrome): menu ⋮ › Adicionar ao ecrã principal.<br><span style="color:#8A948D;word-break:break-all">Se o botão não funcionar: ${escH(link)}</span>` });
   return { subject, text, html };
 }
 module.exports = { createInvites, inviteEmail, ROLES };

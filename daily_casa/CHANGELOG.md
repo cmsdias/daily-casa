@@ -1,3 +1,13 @@
+# 3.7.0 — Finanças mais completas e correções no telemóvel
+
+- Despesas fixas anuais, semestrais ou nos meses que escolheres (seguros, IMI em maio e novembro…); o «por mês» mostra a média.
+- Créditos no património (crédito habitação e outros): o capital em dívida desce sozinho com cada prestação e conta a abater ao património líquido. Novo tipo «Imóvel».
+- Depósitos, poupanças e PPR com entregas programadas (ex.: 25 € por mês) e valor estimado todos os dias, com os juros já sem imposto (28% por omissão).
+- Compras: tocar no nome abre a edição; só a bolinha marca como comprado, com confirmação.
+- A divisão de uma tarefa escolhe-se numa lista organizada por pisos; «Geral» aparece como «Toda a casa».
+- O iPhone deixa de ampliar sozinho ao tocar num campo e o ecrã volta sempre à largura normal.
+- Convites por email sem o perfil e com instruções para iOS e Android.
+
 # 3.6.2 — Emails com a nova imagem
 
 - Os emails de recuperação, de teste e de convite têm o novo visual da Daily Casa: fundo verde, logótipo, cartão claro e botão dourado.
