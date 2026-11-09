@@ -1,3 +1,10 @@
+# 3.10.0 — Calendário da app nos campos de data
+
+- No computador, os campos de data abrem o calendário da Daily Casa, com as cores da app, a semana a começar à segunda e atalhos (Hoje, Amanhã, Sábado, Daqui a 1 semana; nas despesas, Ontem; nos vencimentos, 1, 3 e 6 meses e 1 ano).
+- A data aparece por extenso no campo, por exemplo «quarta, 11 de novembro».
+- Na data de nascimento escolhes o mês e o ano diretamente.
+- Funciona só com o teclado (setas, Page Up/Down, Enter, Esc) e no tema escuro. No telemóvel mantém-se o seletor do sistema.
+
 # 3.9.7 — Cartões de pessoas mais limpos
 
 - Debaixo do nome fica só o perfil; o email aparece em baixo, junto do aniversário e do telefone.

@@ -1905,3 +1905,42 @@ details.task-when:not([open])>summary{margin-bottom:4px}
 .access-who{display:flex;gap:10px;align-items:center;background:#f0efe8;border-radius:14px;padding:10px 12px;margin:0 0 14px}
 .access-who b{display:block;font-size:14px;overflow-wrap:anywhere}
 .access-who small{font-size:12px;color:#6b746d}
+/* 3.10 · Calendário da app (computador). O campo nativo fica escondido; o botão mostra a data por extenso. */
+input.dp-native{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important;padding:0!important;border:0!important;margin:0!important}
+.dp-btn{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;min-height:46px;border:1px solid #d6d8d2;border-radius:14px;background:#fff;padding:11px 14px;font:inherit;font-size:15px;color:#17261e;text-align:left;cursor:pointer}
+.dp-btn .dp-text{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dp-btn.empty .dp-text{color:#8a938d}
+.dp-btn svg{flex:0 0 auto;color:#55605a}
+.dp-btn:hover{border-color:#bfc3bb}
+.dp-btn[aria-expanded="true"],.dp-btn:focus-visible{outline:0;border-color:var(--input-active)}
+.dp-btn.dp-invalid{border-color:#a8473d}
+.dp-btn:disabled{opacity:.6;cursor:not-allowed}
+.dp-btn-chip{width:auto;min-height:0;border-radius:999px;padding:5px 10px;font-size:13px;gap:6px}
+.dp-btn-chip svg{width:15px;height:15px}
+.dp-pop{position:fixed;z-index:1000;width:304px;max-width:calc(100vw - 16px);background:#fff;border:1px solid #e4e3dc;border-radius:20px;box-shadow:0 22px 44px -18px rgba(23,38,30,.38);padding:14px;font-family:inherit;color:#17261e}
+.dp-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px}
+.dp-chip{border:1px solid #e4e3dc;background:#f1f0ea;border-radius:999px;padding:6px 11px;font:600 12.5px/1.2 inherit;font-family:inherit;color:#17261e;cursor:pointer}
+.dp-chip:hover{border-color:#cfcbbd}
+.dp-mh{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.dp-mh b{font-size:16px;letter-spacing:-.01em}
+.dp-mh-sel{justify-content:flex-start}
+.dp-mh-sel select{border:1px solid #e4e3dc;border-radius:10px;background:#f1f0ea;padding:6px 8px;font:inherit;font-size:14px;color:#17261e}
+.dp-navs{margin-left:auto;display:flex;gap:4px}
+.dp-nav{width:34px;height:34px;border-radius:50%;border:0;background:#f1f0ea;color:#17261e;cursor:pointer;display:grid;place-items:center}
+.dp-nav:hover{background:#e8e6dd}
+.dp-wd,.dp-days{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.dp-wd span{font-size:11px;font-weight:700;letter-spacing:.06em;color:#8a938d;text-transform:uppercase;padding:4px 0}
+.dp-day{height:38px;border:0;background:none;border-radius:12px;font:500 14px inherit;font-family:inherit;color:#17261e;cursor:pointer;font-variant-numeric:tabular-nums}
+.dp-day:hover{background:#f1f0ea}
+.dp-day.out{color:#b9bdb7}
+.dp-day.wk{color:#55605a}
+.dp-day.today{box-shadow:inset 0 0 0 1.5px #c9a568;color:#a9843f;font-weight:700}
+.dp-day.sel{background:#17261e;color:#f8f7f2;font-weight:700;box-shadow:none}
+.dp-day:focus-visible{outline:2px solid #a9843f;outline-offset:1px}
+.dp-day:disabled{color:#d2d4cf;cursor:not-allowed;background:none}
+.dp-foot{display:flex;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid #efeee8}
+.dp-link{border:0;background:none;font:600 13px inherit;font-family:inherit;color:#a9843f;cursor:pointer;padding:6px 4px}
+.dp-link.muted{color:#55605a}
+.dp-pop .dp-mh-sel select{width:auto;min-width:0;height:36px;margin:0;padding:0 28px 0 10px;background-position:right 8px center}
+.dp-pop .dp-mh-sel .dp-month{flex:1 1 auto}
+.dp-pop .dp-mh-sel .dp-year{flex:0 0 88px}
