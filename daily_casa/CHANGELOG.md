@@ -1,3 +1,9 @@
+# 3.9.0 — Tarefas partilhadas
+
+- Uma tarefa pode ter várias pessoas responsáveis (em «Partilhar com», na edição da tarefa). Aparece em «As minhas» de cada uma e todas são avisadas.
+- Basta uma pessoa concluir: a tarefa fica feita para todos e a lista mostra quem a concluiu.
+- Só o administrador e os gestores partilham tarefas; não se aplica a tarefas privadas nem a rotinas.
+
 # 3.8.1 — Mais espaço entre o sino e o avatar
 
 - No topo do telemóvel, o sino e a fotografia de perfil ficam mais afastados.

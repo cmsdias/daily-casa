@@ -5,11 +5,11 @@
 'use strict';
 const QUICK_FILTERS=[['mine','As minhas'],['all','Todas'],['unassigned','Sem responsável'],['urgent','Urgentes'],['short','Até 30 min']];
 function taskMatches(t){
- if(quickFilter==='mine'&&t.assignedTo!==store.user.id)return false;
+ if(quickFilter==='mine'&&!isAssignee(t,store.user.id))return false;
  if(quickFilter==='unassigned'&&t.assignedTo)return false;
  if(quickFilter==='urgent'&&!['P1','P2'].includes(t.priority))return false;
  if((quickFilter==='short'||timeMode)&&!(t.estimatedMinutes!=null&&t.estimatedMinutes<=(timeMode?durationLimit:30)&&t.status!=='waiting'))return false;
- if(personFilter!=='all'&&(personFilter==='none'?t.assignedTo:t.assignedTo!==personFilter))return false;
+ if(personFilter!=='all'&&(personFilter==='none'?t.assignedTo:!isAssignee(t,personFilter)))return false;
  if(roomFilter!=='all'&&t.room!==roomFilter)return false;
  if(priorityFilter!=='all'&&t.priority!==priorityFilter)return false;
  if(query&&!(t.title+' '+(t.notes||'')+' '+(t.room||'')).toLocaleLowerCase('pt-PT').includes(query.toLocaleLowerCase('pt-PT')))return false;
