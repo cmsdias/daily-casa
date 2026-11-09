@@ -3,7 +3,7 @@
  * Criação rápida por escrita natural (CasaCore.parseTask), com etiquetas que se podem corrigir.
  */
 'use strict';
-const QUICK_FILTERS=[['all','Todas'],['mine','Minhas'],['unassigned','Por atribuir'],['urgent','Urgentes'],['short','Até 30 min']];
+const QUICK_FILTERS=[['mine','As minhas'],['all','Todas'],['unassigned','Sem responsável'],['urgent','Urgentes'],['short','Até 30 min']];
 function taskMatches(t){
  if(quickFilter==='mine'&&t.assignedTo!==store.user.id)return false;
  if(quickFilter==='unassigned'&&t.assignedTo)return false;
@@ -15,16 +15,21 @@ function taskMatches(t){
  if(query&&!(t.title+' '+(t.notes||'')+' '+(t.room||'')).toLocaleLowerCase('pt-PT').includes(query.toLocaleLowerCase('pt-PT')))return false;
  return true;
 }
+// 3.8: a lista separa Pontuais e Rotinas (seletor no topo) e lembra-se dos grupos abertos.
+const lsGet=(k,d)=>{try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch{return d;}};
+const lsSet=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v));}catch{}};
+let listKind=lsGet('dc-list-kind','project')==='routine'?'routine':'project';
+const groupOpen=Object.assign({late:true,today:true,week:true,later:false,none:false},lsGet('dc-task-groups',{}));
 // Agrupa por quando. As rotinas só entram na lista quando se aproximam (até 7 dias); todas estão em «Rotinas».
 function whenGroups(list){
  const t0=today(),week=CasaCore.addDays(t0,7);
  const g={late:[],today:[],week:[],later:[],none:[]};
- for(const t of list){if(t.kind==='routine'&&(!t.dueDate||t.dueDate>week))continue;
+ for(const t of list){
   if(!t.dueDate)(t.thisWeek?g.week:g.none).push(t);else if(t.dueDate<t0)g.late.push(t);else if(t.dueDate===t0)g.today.push(t);else if(t.dueDate<=week)g.week.push(t);else g.later.push(t);}
  const by=(a,b)=>CasaCore.urgency(b,t0)-CasaCore.urgency(a,t0)||(a.dueDate||'9').localeCompare(b.dueDate||'9')||a.title.localeCompare(b.title,'pt-PT');
  Object.values(g).forEach(a=>a.sort(by));return g;
 }
-function viewTabs(){return `<div class="view-tabs" role="tablist" aria-label="Vistas das tarefas">${TASK_VIEWS.map(([id,l])=>`<button type="button" role="tab" aria-selected="${taskView===id}" class="${taskView===id?'active':''}" data-action="task-view" data-view="${id}">${l}</button>`).join('')}</div>`;}
+function viewTabs(){return `<div class="view-tabs" role="tablist" aria-label="Vistas das tarefas">${TASK_VIEWS.filter(([id])=>id!=='routines'||taskView==='routines').map(([id,l])=>`<button type="button" role="tab" aria-selected="${taskView===id}" class="${taskView===id?'active':''}" data-action="task-view" data-view="${id}">${l}</button>`).join('')}</div>`;}
 function tasksPage(){
  const sub={list:'O que há para fazer, por ordem de quando.',routines:'Os cuidados que se repetem, com frequência e rotação.',calendar:'Tarefas, rotinas, aniversários e feriados, mês a mês.',rooms:'Como está cada divisão, a partir das rotinas e das atrasadas.'}[taskView];
  const body=taskView==='routines'?routinesPage():taskView==='calendar'?calendarPage():taskView==='rooms'?roomsView():taskListView();
@@ -34,16 +39,17 @@ function taskListView(){
  const projects=tasks().filter(t=>t.kind==='project');const doneCount=projects.filter(t=>t.status==='done').length;
  const showDone=tab==='done';
  const base=showDone?projects.filter(t=>t.status==='done'):tasks().filter(t=>t.status!=='done');
- const list=base.filter(taskMatches);
+ const pending=base.filter(taskMatches);const list=showDone?pending:pending.filter(t=>(t.kind==='routine')===(listKind==='routine'));
+ const kindSeg=showDone?'':`<div class="seg-control kind-seg" role="radiogroup" aria-label="Tipo de tarefa"><button type="button" role="radio" aria-checked="${listKind==='project'}" data-action="list-kind" data-kind="project">Pontuais · ${pending.filter(t=>t.kind!=='routine').length}</button><button type="button" role="radio" aria-checked="${listKind==='routine'}" data-action="list-kind" data-kind="routine">Rotinas · ${pending.filter(t=>t.kind==='routine').length}</button></div>`;
  const advanced=personFilter!=='all'||roomFilter!=='all'||priorityFilter!=='all';
  const chips=`<div class="filter-chips" role="group" aria-label="Filtros rápidos">${QUICK_FILTERS.map(([id,l])=>`<button type="button" class="chip ${quickFilter===id?'on':''}" data-action="quick-filter" data-value="${id}" aria-pressed="${quickFilter===id}">${l}</button>`).join('')}<button type="button" class="chip ${taskFiltersOpen||advanced?'on':''}" data-action="filter-toggle" aria-expanded="${taskFiltersOpen}">${ico('filter')} Mais filtros${advanced?' ·':''}</button></div>`;
- const tools=`<div class="list-tools"><label class="search">${ico('search')}<input name="search" type="search" placeholder="Pesquisar tarefa ou divisão…" value="${esc(query)}" aria-label="Pesquisar tarefas" /></label><div class="seg-control seg-small" role="radiogroup" aria-label="Estado"><button type="button" role="radio" aria-checked="${!showDone}" data-action="tab" data-tab="active">Por fazer</button><button type="button" role="radio" aria-checked="${showDone}" data-action="tab" data-tab="done">Concluídas · ${doneCount}</button></div></div>${chips}<div class="${taskFiltersOpen?'':'filters-collapsed'}">${filtersHtml('project')}${advanced||timeMode?'<button class="button small" data-action="clear-filters">Limpar filtros</button>':''}</div>`;
+ const tools=`${kindSeg}<div class="list-tools"><label class="search">${ico('search')}<input name="search" type="search" placeholder="Pesquisar tarefa ou divisão…" value="${esc(query)}" aria-label="Pesquisar tarefas" /></label><div class="seg-control seg-small" role="radiogroup" aria-label="Estado"><button type="button" role="radio" aria-checked="${!showDone}" data-action="tab" data-tab="active">Por fazer</button><button type="button" role="radio" aria-checked="${showDone}" data-action="tab" data-tab="done">Concluídas · ${doneCount}</button></div></div>${chips}<div class="${taskFiltersOpen?'':'filters-collapsed'}">${filtersHtml('project')}${advanced||timeMode?'<button class="button small" data-action="clear-filters">Limpar filtros</button>':''}</div>`;
  if(showDone){const sorted=list.slice().sort((a,b)=>String(b.updatedAt||'').localeCompare(String(a.updatedAt||'')));
   return `${tools}<div class="panel task-group">${sorted.length?sorted.map(t=>taskRow(t,true)).join(''):`<p class="group-empty">Ainda não há tarefas concluídas${quickFilter!=='all'||advanced?' com estes filtros':''}.</p>`}</div>${isAdmin()&&doneCount?`<button type="button" class="button small" data-action="tasks-clear-done">${ico('trash')} Limpar concluídas</button>`:''}`;}
  const g=whenGroups(list);
  const GROUPS=[['late','Atrasadas','is-late'],['today','Hoje',''],['week','Esta semana',''],['later','Mais tarde',''],['none','Sem data','']];
  const shown=GROUPS.filter(([k])=>g[k].length);
- return `${tools}${shown.length?shown.map(([k,l,cls])=>`<h2 class="group-title ${cls}">${l} <span>${g[k].length}</span></h2><div class="panel task-group">${g[k].map(t=>taskRow(t,true)).join('')}</div>`).join(''):`<div class="panel">${empty('search','Não há tarefas aqui',quickFilter!=='all'||advanced||query?'Altera os filtros ou a pesquisa.':'Está tudo feito. Acrescenta uma tarefa com o «+».')}</div>`}<p class="field-help list-foot">As rotinas aparecem aqui quando faltam 7 dias ou menos; todas estão na vista «Rotinas».</p>`;
+ return `${tools}${shown.length?shown.map(([k,l,cls])=>`<details class="task-when" data-group="${k}" ${groupOpen[k]||query?'open':''}><summary class="group-title ${cls}"><span class="car" aria-hidden="true"></span>${l} <span>${g[k].length}</span></summary><div class="panel task-group">${g[k].map(t=>taskRow(t,true)).join('')}</div></details>`).join(''):`<div class="panel">${empty('search',listKind==='routine'?'Não há rotinas aqui':'Não há tarefas aqui',quickFilter!=='all'||advanced||query?(quickFilter==='mine'?'Não tens nada atribuído. Vê «Todas» ou altera os filtros.':'Altera os filtros ou a pesquisa.'):'Está tudo feito. Acrescenta uma tarefa com o «+».')}</div>`}<p class="field-help list-foot">Toca no título de um grupo para o abrir ou fechar.</p>${listKind==='routine'?`<button type="button" class="button small" data-action="task-view" data-view="routines">${ico('repeat')} Gerir frequência e rotação</button>`:''}`;
 }
 
 /* ───────────── Divisões com estado ───────────── */
@@ -104,6 +110,7 @@ function qtInsert(text){const q=modal.qt;q.text=(q.text.trim()+' '+text).trim()+
 actionHandlers.push(async(name,el)=>{
  switch(name){
   case 'task-view':taskView=el.dataset.view;timeMode=false;render();return true;
+  case 'list-kind':listKind=el.dataset.kind==='routine'?'routine':'project';lsSet('dc-list-kind',listKind);render();return true;
   case 'quick-filter':{const v=el.dataset.value;quickFilter=quickFilter===v&&v!=='all'?'all':v;timeMode=false;render();return true;}
   case 'qt-picker':modal.qt.picker=modal.qt.picker===el.dataset.key?'':el.dataset.key;qtRefresh();return true;
   case 'qt-insert':qtInsert(el.dataset.text);return true;
@@ -112,3 +119,6 @@ actionHandlers.push(async(name,el)=>{
  }
  return false;
 });
+
+// Guarda que grupos da lista estão abertos.
+document.addEventListener('toggle',e=>{const d=e.target;if(!d.classList?.contains('task-when'))return;groupOpen[d.dataset.group]=d.open;lsSet('dc-task-groups',groupOpen);},true);

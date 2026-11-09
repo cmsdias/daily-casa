@@ -1,3 +1,9 @@
+# 3.8.0 — Lista de tarefas arrumada, barra em vidro e ações atualizadas sozinhas
+
+- Tarefas: seletor Pontuais / Rotinas no topo, a lista abre em «As minhas» e os grupos por prazo abrem e fecham (Mais tarde e Sem data começam fechados; a app lembra-se da tua escolha).
+- A barra de baixo passa a flutuar, em vidro translúcido e desfocado, com o + dentro dela.
+- Património: ações, ETF e cripto com símbolo e quantidade atualizam-se sozinhos todos os dias depois do fecho de Nova Iorque, convertidos para euros ao câmbio do BCE. Com o preço médio de compra, vês o ganho. Há também um botão para atualizar logo.
+
 # 3.7.2 — Unidades cacho e molho
 
 - Novas unidades nas compras: cacho (bananas, uvas) e molho (salsa, coentros, espargos). Também se escrevem diretamente, por exemplo «2 cachos de uvas».

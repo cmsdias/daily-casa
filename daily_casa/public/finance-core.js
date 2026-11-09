@@ -103,6 +103,10 @@ function cleanAsset(b,a={}){const out={...a};
   if('ratePct'in b){if(b.ratePct===''||b.ratePct==null)out.ratePct=null;else{const r=Number(b.ratePct);if(!Number.isFinite(r)||r<-100||r>100)throw err(400,'Taxa inválida.');out.ratePct=Math.round(r*100)/100;}}
   if('contribCents'in b){if(b.contribCents==null||b.contribCents===0)out.contribCents=null;else out.contribCents=cents(b.contribCents);}
   if('contribDay'in b){if(b.contribDay==null||b.contribDay==='')out.contribDay=null;else{const d=Number(b.contribDay);if(!Number.isInteger(d)||d<1||d>31)throw err(400,'Dia inválido.');out.contribDay=d;}}
+  // 3.8: cotação automática (ações, ETF, cripto): símbolo, quantidade e preço médio de compra por unidade (cêntimos).
+  if('symbol'in b){const sy=str(b.symbol,20).toUpperCase();if(sy&&!/^[A-Z0-9][A-Z0-9.\-=^]{0,19}$/.test(sy))throw err(400,'Símbolo inválido. Usa o código da bolsa, por exemplo AAPL.');if(sy!==(a.symbol||'')){out.symbol=sy||null;out.quote=null;}}
+  if('shares'in b){if(b.shares==null||b.shares==='')out.shares=null;else{const q=Number(b.shares);if(!Number.isFinite(q)||q<=0||q>1e9)throw err(400,'Quantidade inválida.');out.shares=Math.round(q*1e8)/1e8;}}
+  if('costCents'in b){out.costCents=b.costCents==null||b.costCents===0?null:cents(b.costCents);}
   if('renewMonths'in b){if(b.renewMonths==null||b.renewMonths===''||b.renewMonths===0)out.renewMonths=null;else{const r=Number(b.renewMonths);if(!Number.isInteger(r)||r<1||r>120)throw err(400,'Prazo de renovação inválido.');out.renewMonths=r;}}
   if('taxPct'in b){if(b.taxPct===''||b.taxPct==null)out.taxPct=null;else{const t=Number(b.taxPct);if(!Number.isFinite(t)||t<0||t>100)throw err(400,'Imposto inválido.');out.taxPct=Math.round(t*100)/100;}}
   return out;}
@@ -130,7 +134,7 @@ function handle(fin,u,method,path,b,ctx){
   if(m){const t=fin.transactions.find(x=>x.id===m[1]&&x.kind==='expense');if(!t||!canSeeExpense(fin,u,t))throw err(404,'Despesa não encontrada.');
     if(method==='PATCH'){if('amountCents'in b)t.amountCents=cents(b.amountCents);if('transactionDate'in b)t.transactionDate=dateISO(b.transactionDate);if('category'in b)t.category=str(b.category,60)||'Outros';if('description'in b)t.description=str(b.description,250);if('assetId'in b)t.assetId=optAsset(b.assetId);t.updatedAt=now();return {expense:t};}
     if(method==='DELETE'){fin.transactions=fin.transactions.filter(x=>x!==t);return {ok:true};}}
-  if(path==='/api/finance/assets'&&method==='POST'){const a={id:newId(),...cleanAsset(b),ownerId:u.id,history:[],archived:false,createdAt:now()};setValue(a,b.valueCents??0,today());fin.assets.push(a);return {asset:a};}
+  if(path==='/api/finance/assets'&&method==='POST'){const a={id:newId(),...cleanAsset(b),ownerId:u.id,history:[],archived:false,createdAt:now()};if(a.symbol&&!a.shares)throw err(400,'Indica a quantidade.');setValue(a,b.valueCents??0,today());fin.assets.push(a);return {asset:a};}
   m=path.match(/^\/api\/finance\/assets\/([^/]+)$/);
   if(m){const a=assetFor(m[1],{own:method!=='GET'});
     if(method==='PATCH'){if(a.ownerId!==u.id&&'scope'in b)throw err(403,'Só quem criou este item pode mudar a visibilidade.');Object.assign(a,cleanAsset(b,a));if('valueCents'in b)setValue(a,b.valueCents,today());return {asset:a};}
@@ -154,6 +158,6 @@ function handle(fin,u,method,path,b,ctx){
   return undefined;
 }
 const monthlyEquivalent=r=>Math.round(r.amountCents*(recurringMonths(r)?recurringMonths(r).length:12)/12);
-const api={nextMaturity,projectAsset,currentValue,signedValue,isLiability,LIABILITY_TYPES,DEFAULT_TAX,recurringMonths,monthlyEquivalent,ASSET_TYPES,ASSET_GROUPS,EXPENSE_CATEGORIES,FIXED_CATEGORIES,migrate,generateRecurring,view,handle,canSeeAsset};
+const api={setValue,nextMaturity,projectAsset,currentValue,signedValue,isLiability,LIABILITY_TYPES,DEFAULT_TAX,recurringMonths,monthlyEquivalent,ASSET_TYPES,ASSET_GROUPS,EXPENSE_CATEGORIES,FIXED_CATEGORIES,migrate,generateRecurring,view,handle,canSeeAsset};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.CasaFinance=api;
 })(typeof window!=='undefined'?window:globalThis);
