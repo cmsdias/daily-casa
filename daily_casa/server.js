@@ -71,12 +71,26 @@ if(rawDb&&db.appVersion!==APP_VERSION){try{backups.create('upgrade',rawDb);}catc
 rawDb=null;
 migrate();save();
 // 3.1 · Acesso pela Internet: proxy de confiança, limites de tentativas e email (Gmail) para recuperar a palavra-passe.
-const {createNet}=require('./lib/net');const {createLimiter,waitText}=require('./lib/ratelimit');const MAIL=require('./lib/mailer');
+const {createNet}=require('./lib/net');const {createLimiter,createRateLimiter,waitText}=require('./lib/ratelimit');const MAIL=require('./lib/mailer');
 function addonOptions(){try{return JSON.parse(fs.readFileSync(path.join(DATA_DIR,'options.json'),'utf8'))||{};}catch{return {};}}
 const NET=createNet({trusted:(process.env.TRUSTED_PROXIES||'172.30.33.0/24').split(',')});
 const MAILER=MAIL.createMailer({getOptions:()=>({...addonOptions(),...(process.env.SMTP_USER?{email_remetente:process.env.SMTP_USER,email_palavra_passe:process.env.SMTP_PASS}:{})}),host:process.env.SMTP_HOST||'smtp.gmail.com',port:+(process.env.SMTP_PORT||465),secure:process.env.SMTP_SECURE!=='0'});
 // Por IP: 10 falhas em 15 min bloqueiam 15 min (a duplicar a cada reincidência, até 24 h). Por conta: 20 falhas numa hora, de qualquer IP, bloqueiam 30 min.
 // Recuperação: 5 pedidos em 15 min por IP e por email.
+// Limite de ritmo em todas as rotas /api (3.9.2). Valores generosos para uso normal (a app sincroniza a cada 10 s);
+// travam scripts e abusos. RATE_SCALE permite ajustar (ex.: testes).
+const RS=Number(process.env.RATE_SCALE||1);
+const RL={ip:createRateLimiter({perMin:600*RS,burst:300*RS}),read:createRateLimiter({perMin:240*RS,burst:120*RS}),write:createRateLimiter({perMin:90*RS,burst:45*RS}),heavy:createRateLimiter({perMin:20/60*RS,burst:10*RS})};
+// Pedidos «pesados»: enviam email ou push, recebem ficheiros ou mexem em cópias de segurança.
+const HEAVY_RE=/^\/api\/(invites(\/[^/]+\/resend)?|security\/mail-test|push\/test|ha\/test|import|backups(\/.*)?|(tasks|incidents)\/[^/]+\/photos|equipment\/[^/]+\/docs)$/;
+function rateCheck(req,p){
+  const ip=NET.info(req).client;const tok=((req.headers.cookie||'').match(/(?:^|;\s*)casa_session=([^;]+)/)||[])[1];
+  const who=tok?'s:'+crypto.createHash('sha256').update(tok).digest('base64url').slice(0,22):'ip:'+ip;
+  const checks=[[RL.ip,'ip:'+ip],[req.method==='GET'?RL.read:RL.write,who]];
+  if(req.method!=='GET'&&HEAVY_RE.test(p))checks.push([RL.heavy,who]);
+  for(const [lim,key] of checks){const r=lim.take(key);if(!r.ok)return r.retryAfter;}
+  return 0;
+}
 const LIM={ip:createLimiter({max:10,windowMs:15*60_000,blockMs:15*60_000,progressive:true}),account:createLimiter({max:20,windowMs:60*60_000,blockMs:30*60_000}),reset:createLimiter({max:5,windowMs:15*60_000,blockMs:30*60_000})};
 function tooMany(res,st){return send(res,429,{error:`Demasiadas tentativas. Tenta novamente dentro de ${waitText(st.retryAfter)}.`},{'Retry-After':String(st.retryAfter)});}
 const alertSent=new Map();
@@ -254,6 +268,7 @@ const server=http.createServer(async (req,res)=>{
   {const o=NET.info(req).origin;if(o&&db.settings&&db.settings.publicUrlAuto!==o&&db.people.length){db.settings.publicUrlAuto=o;save();}}
   if(!p.startsWith('/api/')){if(req.method!=='GET')return fail(res,405,'Método não permitido.');return staticFile(req,res,p);}
   if(!['GET','POST','PATCH','DELETE'].includes(req.method))return fail(res,405,'Método não permitido.');
+  {const wait=rateCheck(req,p);if(wait){res.setHeader('Retry-After',String(wait));return fail(res,429,`Demasiados pedidos seguidos. Tenta de novo dentro de ${waitText(wait)}.`);}}
   if(req.method!=='GET'){
     // A custom header makes cross-origin browser writes require preflight; CORS is never enabled.
     // Avoid comparing Origin/Host: HA Ingress may legitimately rewrite the Host header.

@@ -40,6 +40,20 @@ function createLimiter({ max, windowMs, blockMs, progressive = false, maxBlockMs
   }
   return { status, fail, success, clear, blocked };
 }
+// Limite de ritmo para todos os pedidos (3.9.2): «balde de fichas» por chave. Cada pedido gasta uma ficha;
+// as fichas repõem-se a perMin por minuto, até burst. Sem fichas, o pedido é recusado (429) com o tempo de espera.
+function createRateLimiter({ perMin, burst = perMin, now = () => Date.now(), maxKeys = 20000 }) {
+  const b = new Map(); const rate = perMin / 60000;
+  function take(key, cost = 1) {
+    const t = now(); let e = b.get(key);
+    if (!e) { if (b.size >= maxKeys) sweep(t); e = { tokens: burst, at: t }; b.set(key, e); }
+    e.tokens = Math.min(burst, e.tokens + (t - e.at) * rate); e.at = t;
+    if (e.tokens >= cost) { e.tokens -= cost; return { ok: true, retryAfter: 0 }; }
+    return { ok: false, retryAfter: Math.max(1, Math.ceil((cost - e.tokens) / rate / 1000)) };
+  }
+  function sweep(t) { for (const [k, e] of b) if (e.tokens + (t - e.at) * rate >= burst) b.delete(k); if (b.size >= maxKeys) b.clear(); }
+  return { take, size: () => b.size };
+}
 const minutes = s => Math.max(1, Math.ceil(s / 60));
 function waitText(seconds) { const m = minutes(seconds); return m >= 90 ? `${Math.round(m / 60)} horas` : m === 1 ? '1 minuto' : `${m} minutos`; }
-module.exports = { createLimiter, waitText };
+module.exports = { createLimiter, createRateLimiter, waitText };

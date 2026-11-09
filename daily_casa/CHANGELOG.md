@@ -1,3 +1,9 @@
+# 3.9.2 — Limite de pedidos em todas as rotas
+
+- Todas as rotas da app passam a ter limite de ritmo, por ligação e por sessão, com valores largos para o uso normal.
+- Enviar convites, emails e notificações de teste, carregar ficheiros e mexer em cópias de segurança tem um limite mais apertado.
+- Quando se passa o limite, a app diz quanto tempo esperar.
+
 # 3.9.1 — Pequena correção nas Finanças
 
 - O imposto sobre juros escrito à mão deixa de ser substituído pela sugestão quando mudas o tipo do item.
