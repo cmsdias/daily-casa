@@ -1,3 +1,9 @@
+# 3.11.2 — Despesas descontam na conta de onde foram pagas
+
+- Uma despesa com «Pago de» desconta automaticamente no valor estimado dessa conta ou depósito (também as despesas fixas com «Débito em»).
+- Conta a partir do último valor registado: quando escreves o valor real do banco, a estimativa recomeça daí, sem descontar duas vezes.
+- Na janela do item vês quanto foi descontado em despesas.
+
 # 3.11.1 — Divisões das tarefas sempre ligadas à lista
 
 - Ao mudar o nome de uma divisão, as tarefas, equipamentos e ocorrências dessa divisão passam a acompanhar o novo nome.
