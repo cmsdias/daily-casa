@@ -1944,3 +1944,6 @@ input.dp-native{position:absolute!important;width:1px!important;height:1px!impor
 .dp-pop .dp-mh-sel select{width:auto;min-width:0;height:36px;margin:0;padding:0 28px 0 10px;background-position:right 8px center}
 .dp-pop .dp-mh-sel .dp-month{flex:1 1 auto}
 .dp-pop .dp-mh-sel .dp-year{flex:0 0 88px}
+/* 3.10.1 · Espaço entre a etiqueta da versão e o título; o avatar tem um anel por fora (outline), por isso afasta-se 4px para o espaço visível ficar igual ao dos outros botões. */
+.version-box .version-badge{margin-bottom:12px}
+.top-actions>.profile-btn{margin-left:4px}
