@@ -136,3 +136,5 @@ A aplicação pede acesso à API do Home Assistant (`homeassistant_api`) só par
 - Pensada para uma casa (poucas pessoas em simultâneo). Os dados são gravados num único ficheiro JSON.
 
 **Enviar o acesso por email.** Em Pessoas, a quem tem conta criada com palavra-passe temporária e email, o administrador pode enviar uma ligação (uso único, 7 dias) para a pessoa escolher a palavra-passe definitiva e entrar. Reenviar invalida a ligação anterior; mudar o email ou repor a palavra-passe também.
+
+**Meteorologia.** O ecrã Hoje mostra o tempo para a localização da casa. Por omissão, a fonte é o IPMA (dados abertos; a cidade com previsão mais próxima da localização definida no Home Assistant e a estação meteorológica mais próxima para a temperatura de agora); em alternativa, a entidade de meteorologia do Home Assistant (ex.: weather.forecast_home). O add-on atualiza de hora a hora. O administrador e os gestores escolhem a fonte, a localização, as dicas e os avisos de tempo severo (notificação «Avisos de tempo»); cada pessoa pode esconder o cartão.
