@@ -1,3 +1,8 @@
+# 3.10.1 — Acertos de espaçamento
+
+- O aviso de nova versão tem mais espaço entre a etiqueta e o título.
+- No computador, o avatar fica à mesma distância do sino que o sino do botão de atualizar.
+
 # 3.10.0 — Calendário da app nos campos de data
 
 - No computador, os campos de data abrem o calendário da Daily Casa, com as cores da app, a semana a começar à segunda e atalhos (Hoje, Amanhã, Sábado, Daqui a 1 semana; nas despesas, Ontem; nos vencimentos, 1, 3 e 6 meses e 1 ano).
