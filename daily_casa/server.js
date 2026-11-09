@@ -235,6 +235,8 @@ const PHOTO_ID=/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 function removePhotoFiles(t){for(const ph of t.photos||[]){if(PHOTO_ID.test(ph.id))try{fs.unlinkSync(path.join(PHOTO_DIR,ph.id+'.jpg'));}catch{}}}
 function authIntegration(req){const h=String(req.headers.authorization||'');const m=/^Bearer\s+(.+)$/.exec(h);if(!m||!db.ha?.token)return false;const a=Buffer.from(m[1].trim()),b=Buffer.from(db.ha.token);return a.length===b.length&&crypto.timingSafeEqual(a,b);}
 function trackShopping(item){const key=item.title.toLocaleLowerCase('pt-PT').trim();const prev=db.shoppingFreq[key]||{count:0};db.shoppingFreq[key]={title:item.title,category:item.category,quantity:item.quantity,unit:item.unit||'',count:prev.count+1,last:new Date().toISOString()};const keys=Object.keys(db.shoppingFreq);if(keys.length>300){keys.sort((a,b)=>String(db.shoppingFreq[a].last).localeCompare(String(db.shoppingFreq[b].last))).slice(0,keys.length-300).forEach(k=>delete db.shoppingFreq[k]);}}
+// Desfaz uma contagem: produto apagado antes de ser comprado (engano) ou renomeado (erro de escrita).
+function untrackShopping(title){const key=String(title||'').toLocaleLowerCase('pt-PT').trim();const f=db.shoppingFreq[key];if(!f)return;f.count=(f.count||1)-1;if(f.count<=0)delete db.shoppingFreq[key];}
 function knownCategory(title){return db.shoppingFreq[String(title).toLocaleLowerCase('pt-PT').trim()]?.category||'';}
 const TYPES={'.html':'text/html; charset=utf-8','.js':'application/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.webmanifest':'application/manifest+json; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.woff2':'font/woff2','.txt':'text/plain; charset=utf-8'};
 function staticFile(req,res,pathname){let decoded;try{decoded=decodeURIComponent(pathname);}catch{return fail(res,400,'URL inválido.');}if(decoded.includes('\0'))return fail(res,400,'URL inválido.');const relative=pathname==='/'?'index.html':decoded.replace(/^\/+/, '');const file=path.resolve(WEB,relative);if(!file.startsWith(WEB+path.sep))return fail(res,403,'Acesso negado.');if(!fs.existsSync(file)||!fs.statSync(file).isFile())return fail(res,404,'Não encontrado.');const ext=path.extname(file);const contents=fs.readFileSync(file);res.writeHead(200,{'Content-Type':TYPES[ext]||'application/octet-stream','Content-Length':contents.length,'Cache-Control':['.html','.js','.css','.webmanifest'].includes(ext)?'no-cache, must-revalidate':'public, max-age=3600','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'"});res.end(contents);}
@@ -549,6 +551,8 @@ const server=http.createServer(async (req,res)=>{
       db.shopping.push(item);trackShopping(item);logAction(user,'shopping.create',item.id);save();return send(res,201,{item});
     }
     if(p==='/api/shopping/clear-purchased'&&req.method==='POST'){const n=db.shopping.filter(x=>x.purchased).length;db.shopping=db.shopping.filter(x=>!x.purchased);logAction(user,'shopping.clear',String(n));save();return send(res,200,{removed:n});}
+    // Esquecer uma sugestão das compras habituais.
+    if(p==='/api/shopping/frequent'&&req.method==='DELETE'){const key=String(b.title||'').toLocaleLowerCase('pt-PT').trim();if(!db.shoppingFreq[key])return fail(res,404,'Sugestão não encontrada.');delete db.shoppingFreq[key];logAction(user,'shopping.forget',key.slice(0,60));save();return send(res,200,{shoppingFrequent:frequentShopping()});}
     const shoppingMatch=p.match(/^\/api\/shopping\/([^/]+)$/);
     if(shoppingMatch){const item=db.shopping.find(x=>x.id===shoppingMatch[1]);if(!item)return fail(res,404,'Produto não encontrado.');
       if(req.method==='PATCH'){// Lista partilhada: todos podem marcar como comprado e acertar quantidade e unidade; o resto só quem criou ou gestores.
@@ -559,9 +563,10 @@ const server=http.createServer(async (req,res)=>{
         if('category'in b)updated.category=cleanStr(b.category,70);
         if('notes'in b)updated.notes=cleanStr(b.notes,500);
         if('purchased'in b){if(typeof b.purchased!=='boolean')return fail(res,400,'Estado inválido.');updated.purchased=b.purchased;}
+        if(updated.title.toLocaleLowerCase('pt-PT')!==item.title.toLocaleLowerCase('pt-PT')){untrackShopping(item.title);trackShopping(updated);}
         updated.updatedAt=new Date().toISOString();Object.assign(item,updated);logAction(user,'shopping.update',item.id);save();return send(res,200,{item});
       }
-      if(req.method==='DELETE'){if(!elevated(user)&&item.createdBy!==user.id)return fail(res,403,'Sem permissão para eliminar.');db.shopping=db.shopping.filter(x=>x.id!==item.id);logAction(user,'shopping.delete',item.id);save();return send(res,200,{ok:true});}
+      if(req.method==='DELETE'){if(!elevated(user)&&item.createdBy!==user.id)return fail(res,403,'Sem permissão para eliminar.');if(!item.purchased)untrackShopping(item.title);db.shopping=db.shopping.filter(x=>x.id!==item.id);logAction(user,'shopping.delete',item.id);save();return send(res,200,{ok:true});}
     }
     if(p==='/api/worklogs'&&req.method==='POST'){
       let date;try{date=dateISO(cleanStr(b.date,10));}catch{return fail(res,400,'Data inválida.');}
