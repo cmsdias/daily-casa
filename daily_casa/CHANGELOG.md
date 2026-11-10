@@ -1,3 +1,7 @@
+# 3.11.5 — Novo ícone para Hoje
+
+- O separador Hoje passa a ter um calendário em vez do sol, para não se confundir com a meteorologia.
+
 # 3.11.4 — Registos de trabalho editáveis
 
 - No Registo de horas, tocar num registo abre a edição: data, duração, tarefa, quem fez e descrição. Também se pode eliminar.
