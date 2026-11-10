@@ -43,10 +43,51 @@ function houseStatusLine(id){
   default:return (HOUSE_PAGES.find(x=>x[0]===id)||[])[3]||'';
  }
 }
+/* 3.15 — Painel da casa (computador e tablet): o estado de cada área em cartões, com ações diretas.
+ * No telemóvel mantém-se a lista. Cada cartão só aparece a quem tem acesso a essa área. */
+const hdAgo=iso=>{const d=CasaCore.daysBetween(String(iso).slice(0,10),today());return d<=0?'aberta hoje':d===1?'aberta ontem':`aberta há ${d} dias`;};
+const hdCard=(id,title,meta,body,more,action='')=>`<section class="hd-card hd-${id}" aria-labelledby="hd-h-${id}"><header class="hd-head"><h2 id="hd-h-${id}">${title}</h2>${meta?`<small>${meta}</small>`:''}${action}</header>${body}<button type="button" class="hd-more" data-action="nav" data-page="${id}">${more} ${ico('chevron')}</button></section>`;
+function hdIncidents(){const open=incidents().filter(x=>x.status!=='resolved').sort((a,b)=>({alta:0,media:1,baixa:2}[a.severity]??3)-({alta:0,media:1,baixa:2}[b.severity]??3)||a.at.localeCompare(b.at));
+ const sev={alta:['bad','Urgente'],media:['warn','Média'],baixa:['ok','Baixa']};
+ const body=open.length?`<div class="hd-rows">${open.slice(0,4).map(x=>`<button type="button" class="hd-row" data-action="inc-view" data-id="${esc(x.id)}"><span class="hd-text"><strong>${esc(x.title)}</strong><small>${esc(roomShort(x.room||'Geral'))} · ${esc(x.status==='progress'?'em resolução':hdAgo(x.at))}</small></span><span class="hd-tag ${(sev[x.severity]||sev.media)[0]}">${(sev[x.severity]||sev.media)[1]}</span></button>`).join('')}</div>${open.length>4?`<p class="hd-note">E mais ${open.length-4}.</p>`:''}`:`<p class="hd-empty">${ico('check-square')} Nada por resolver.</p>`;
+ return hdCard('incidents','Ocorrências',open.length?plural(open.length,'por resolver','por resolver'):'',body,'Ver todas as ocorrências',`<button type="button" class="button small" data-action="inc-new">${ico('plus-square')} Reportar</button>`);}
+function hdFinance(){if(!canFinance())return '';
+ if(!financeData){queueMicrotask(async()=>{try{await refreshFinance();if(page==='house'&&!modal)render();}catch{}});return hdCard('finance','Finanças','',`<div class="sk" style="height:120px;border-radius:14px"></div>`,'Abrir Finanças');}
+ const f=financeData;const now=new Date();const mk=`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;const pm=new Date(now.getFullYear(),now.getMonth()-1,1);const pk=`${pm.getFullYear()}-${String(pm.getMonth()+1).padStart(2,'0')}`;
+ const sumM=k=>f.expenses.filter(x=>x.transactionDate.startsWith(k)).reduce((n,x)=>n+x.amountCents,0);const spent=sumM(mk),prev=sumM(pk);
+ const days=new Date(now.getFullYear(),now.getMonth()+1,0).getDate();const pctMonth=Math.round(now.getDate()/days*100);
+ const total=f.assets.reduce((n,a)=>n+(isDebt(a)?-1:1)*curVal(a),0);const series=patrimonySeries(f.assets);const before=series.length>1?series[series.length-2][1]:null;const dNw=before!=null?total-before:null;
+ const y=now.getFullYear();const budget=f.annualBudget?.[String(y)];const big=yearExpenses(y).filter(x=>!x.recurringId).reduce((n,x)=>n+x.amountCents,0);const bp=budget?Math.round(big/budget*100):0;
+ const upcoming=f.recurring.filter(r=>r.active!==false).map(r=>({r,d:nextDue(r)})).sort((a,b)=>a.d-b.d).slice(0,3);
+ const body=`<div class="hd-split"><div class="hd-kv"><span>Gasto em ${esc(MONTHS_FULL[now.getMonth()])}</span><b>${eurFull(spent)}</b><span>${prev?`em ${MONTHS_FULL[pm.getMonth()]}: ${eur(prev)} · `:''}${pctMonth}% do mês passou</span></div>
+ <div class="hd-kv"><span>Património líquido</span><b>${eurFull(total)}</b><span>${dNw!=null&&dNw!==0?`${dNw>0?'+':'−'}${eur(Math.abs(dNw))} face a ${MONTHS_FULL[pm.getMonth()]}`:'sem variação registada'}</span></div></div>
+ ${budget?`<div class="hd-budget"><div class="hd-meter ${bp>=100?'over':bp>=80?'warn':''}"><i style="width:${Math.min(100,bp)}%"></i></div><small>Despesas grandes de ${y}: ${eur(big)} de ${eur(budget)} (${bp}%)</small></div>`:''}
+ ${upcoming.length?`<div class="hd-rows">${upcoming.map(({r,d})=>`<button type="button" class="hd-row" data-action="nav" data-page="finance"><span class="hd-text"><strong>${esc(r.name)}</strong><small>Fixa · ${esc(dueLabel(d))}</small></span><em>${eurFull(r.amountCents)}</em></button>`).join('')}</div>`:''}`;
+ return hdCard('finance',`Finanças de ${esc(MONTHS_FULL[now.getMonth()])}`,'',body,'Abrir Finanças');}
+function hdEquipment(){if(store.user?.role==='collaborator')return '';const list=equipment();
+ const items=list.flatMap(it=>{const out=[];const s=eqService(it);if(s&&s.d<=60)out.push({it,d:s.d,label:s.d<0?'Revisão atrasada':'Revisão',lvl:s.level,when:it.nextService});if(it.warrantyUntil){const d=CasaCore.daysBetween(today(),it.warrantyUntil);if(d>=0&&d<=60)out.push({it,d,label:'Garantia termina',lvl:d<=30?'warn':'ok',when:it.warrantyUntil});}return out;}).sort((a,b)=>a.d-b.d);
+ const body=items.length?`<div class="hd-rows">${items.slice(0,4).map(x=>`<button type="button" class="hd-row" data-action="eq-view" data-id="${esc(x.it.id)}"><span class="hd-text"><strong>${esc(x.it.name)}</strong><small>${esc(x.label)}</small></span><span class="hd-tag ${x.lvl==='bad'?'bad':x.lvl==='warn'?'warn':'ok'}">${esc(dateShortPT(x.when))}</span></button>`).join('')}</div>`:`<p class="hd-empty">${ico('check-square')} ${list.length?'Nada a tratar nos próximos 60 dias.':'Ainda não há equipamentos registados.'}</p>`;
+ return hdCard('equipment','Equipamentos','próximos 60 dias',body,'Ver equipamentos');}
+function hdBalance(){if(store.user?.role==='collaborator')return '';const b=CasaCore.balance(tasks(),store.history,people(),{today:today()});const max=Math.max(60,...b.rows.map(r=>r.total));
+ const avg=b.rows.length?b.rows.reduce((n,r)=>n+r.total,0)/b.rows.length:0;const low=b.rows.filter(r=>r.total<avg*.5&&avg>0);
+ const body=b.rows.length?`<div class="hd-people">${b.rows.slice(0,5).map(r=>`<div class="hd-who">${avatarHtml(who(r.id)||{name:r.name},'mini')}<span class="hd-meter ${low.includes(r)?'warn':''}" role="img" aria-label="${esc(r.name)}: ${fmtMin(r.total)}"><i style="width:${r.total/max*100}%"></i></span><em>${fmtMin(r.total)}</em></div>`).join('')}</div>${low.length?`<p class="hd-note">${esc(low.map(r=>firstNameOf(r.id)||r.name).join(' e '))} ${low.length===1?'está':'estão'} bem abaixo da média desta semana.</p>`:''}`:`<p class="hd-empty">Ainda sem tarefas esta semana.</p>`;
+ return hdCard('balance','Equilíbrio da semana','tempo em tarefas',body,'Ver equilíbrio');}
+function hdWorklogs(){const m=today().slice(0,7);const logs=workLogs().filter(x=>(x.date||'').startsWith(m)).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')||String(b.createdAt||'').localeCompare(String(a.createdAt||'')));const mins=logs.reduce((n,x)=>n+Number(x.minutes||0),0);
+ const body=`<div class="hd-big">${esc(fmtDur(mins))}<small> · ${plural(logs.length,'registo','registos')}</small></div>${logs.length?`<div class="hd-rows hd-wl">${logs.slice(0,3).map(worklogRow).join('')}</div>`:''}`;
+ return hdCard('worklogs','Registo de horas',esc(MONTHS_FULL[new Date().getMonth()]),body,'Ver registos',`<button type="button" class="button small" data-action="worklog-new">${ico('plus-square')} Registar</button>`);}
+function hdPeople(){const list=people().filter(p=>p.active!==false);const dow=new Date().getDay();
+ const nextDay=p=>{const d=(p.accessDays||[]).map(Number);if(!d.length)return '';for(let i=0;i<7;i++){const w=(dow+i)%7;if(d.includes(w)){if(i===0)return 'acesso hoje';const dt=new Date();dt.setDate(dt.getDate()+i);return `próximo acesso: ${dt.toLocaleDateString('pt-PT',{weekday:'long',day:'numeric',month:'short'}).replace('.','')}`;}}return '';};
+ const rows=list.map(p=>{const open=tasks().filter(t=>t.status!=='done'&&(t.assignedTo===p.id||(t.coAssignees||[]).includes(p.id))).length;const sub=[ROLE_LABELS[p.role]||'',p.role==='collaborator'?nextDay(p):''].filter(Boolean).join(' · ');
+  return `<button type="button" class="hd-row" data-action="nav" data-page="people">${avatarHtml(p,'mini')}<span class="hd-text"><strong>${esc(p.name)}</strong><small>${esc(sub)}</small></span>${p.mustChangePassword&&isAdmin()?'<span class="hd-tag warn">Acesso por ativar</span>':`<em>${plural(open,'tarefa','tarefas')}</em>`}</button>`;}).join('');
+ return hdCard('people','Pessoas',plural(list.length,'com conta','com conta'),`<div class="hd-rows">${rows}</div>`,'Ver pessoas');}
+function houseDashboard(){return `<div class="house-dash">${hdIncidents()}${hdFinance()}${hdEquipment()}${hdBalance()}${hdWorklogs()}${hdPeople()}</div>`;}
+let hdWide=matchMedia('(min-width:651px)').matches;
+matchMedia('(min-width:651px)').addEventListener?.('change',e=>{hdWide=e.matches;if(page==='house'&&!modal)render();});
 function housePage(){
  const items=HOUSE_PAGES.filter(x=>x[0]!=='calendar'&&x[4]());
- return `${head('Casa','Tudo o que não é do dia a dia, num só sítio.',false)}
- <nav class="index-list" aria-label="Secções da casa">${items.map(([id,label,icon])=>`<button type="button" class="index-row" data-action="nav" data-page="${id}"><span class="index-ico">${ico(icon)}</span><span class="index-text"><strong>${esc(label)}</strong><small>${esc(houseStatusLine(id))}</small></span>${ico('chevron','index-chev')}</button>`).join('')}</nav>`;
+ const wide=matchMedia('(min-width:651px)').matches;
+ return `${head('Casa',wide?'O estado de cada área da casa, de relance.':'Tudo o que não é do dia a dia, num só sítio.',false)}${wide?houseDashboard():''}
+ <nav class="index-list house-index" aria-label="Secções da casa">${items.map(([id,label,icon])=>`<button type="button" class="index-row" data-action="nav" data-page="${id}"><span class="index-ico">${ico(icon)}</span><span class="index-text"><strong>${esc(label)}</strong><small>${esc(houseStatusLine(id))}</small></span>${ico('chevron','index-chev')}</button>`).join('')}</nav>`;
 }
 
 /* ───────────── Definições em secções ───────────── */

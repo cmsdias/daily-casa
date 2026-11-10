@@ -2161,3 +2161,51 @@ button.wl-row:focus-visible{outline:2px solid var(--brand-gold);outline-offset:2
  .shopping-line.buying .shop-name span{text-decoration:line-through;opacity:.55;transition:opacity .2s}
  .shopping-line.buying{overflow:hidden;transition:opacity .2s ease .3s,transform .2s ease .3s,height .26s ease .36s,padding .26s ease .36s,min-height .26s ease .36s,border-width .26s ease .36s;opacity:0;transform:translateX(12px);height:0!important;min-height:0!important;padding-top:0!important;padding-bottom:0!important;border-bottom-width:0!important}
 }
+
+/* ───────── 3.15 — Painel da casa (computador e tablet) ───────── */
+@media (min-width:651px){.house-index{display:none}}
+.house-dash{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;align-items:start;grid-auto-flow:row dense}
+@media (min-width:1180px){.house-dash{grid-template-columns:repeat(3,minmax(0,1fr))}.hd-finance,.hd-people{grid-column:span 2}}
+.hd-card{background:#fff;border:1px solid #dfe4dc;border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.hd-head{display:flex;align-items:center;gap:10px;min-height:32px}
+.hd-head h2{margin:0;font-size:16px;letter-spacing:-.01em;flex:1;min-width:0}
+.hd-head small{font-size:13px;color:#657364;white-space:nowrap}
+.hd-head .button.small{flex:none}
+.hd-rows{display:flex;flex-direction:column}
+.hd-row{display:flex;align-items:center;gap:12px;width:100%;min-height:52px;padding:8px 2px;border:0;border-top:1px solid #ecece9;background:none;font:inherit;color:inherit;text-align:left;cursor:pointer;border-radius:0}
+.hd-row:first-child{border-top:0}
+.hd-row:hover .hd-text strong{text-decoration:underline;text-underline-offset:3px}
+.hd-row:focus-visible{outline:2px solid var(--brand-gold);outline-offset:2px;border-radius:8px}
+.hd-text{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.hd-text strong{font-size:14px;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hd-text small{font-size:13px;color:#657364;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hd-row em{font-style:normal;font-weight:650;font-size:13.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hd-tag{flex:none;border-radius:6px;padding:3px 8px;font-size:12px;font-weight:650;white-space:nowrap}
+.hd-tag.bad{background:#fdecea;color:#a8443b}
+.hd-tag.warn{background:#f6eedc;color:#7d6029}
+.hd-tag.ok{background:#e6efe9;color:#3f6b52}
+.hd-more{align-self:flex-start;display:inline-flex;align-items:center;gap:4px;border:0;background:none;padding:6px 0;font:inherit;font-size:13.5px;font-weight:650;color:#7a5a22;cursor:pointer;margin-top:auto}
+.hd-more svg{width:14px;height:14px}
+.hd-more:hover{text-decoration:underline;text-underline-offset:3px}
+.hd-empty{margin:0;display:flex;align-items:center;gap:8px;font-size:14px;color:#657364;min-height:52px}
+.hd-empty svg{width:18px;height:18px;color:#3e6b50}
+.hd-note{margin:0;font-size:13px;color:#657364}
+.hd-split{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+.hd-kv{display:flex;flex-direction:column;gap:2px;min-width:0}
+.hd-kv span{font-size:13px;color:#657364}
+.hd-kv b{font-size:22px;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.2}
+.hd-big{font-size:28px;font-weight:700;letter-spacing:-.03em;font-variant-numeric:tabular-nums;line-height:1.1}
+.hd-big small{font-size:14px;font-weight:500;color:#657364;letter-spacing:0}
+.hd-meter{display:block;height:8px;border-radius:5px;background:#e6eae3;overflow:hidden;flex:1}
+.hd-meter i{display:block;height:100%;border-radius:5px;background:#3e6b50}
+.hd-meter.warn i{background:#c9a15f}
+.hd-meter.over i{background:#a8443b}
+.hd-budget{display:flex;flex-direction:column;gap:6px}
+.hd-budget small{font-size:13px;color:#657364}
+.hd-people{display:flex;flex-direction:column;gap:12px}
+.hd-who{display:grid;grid-template-columns:auto minmax(0,1fr) 64px;gap:12px;align-items:center}
+.hd-who em{font-style:normal;text-align:right;font-weight:650;font-variant-numeric:tabular-nums;font-size:13.5px}
+.hd-wl .wl-row{min-height:52px;padding:8px 0}
+.hd-people-list .hd-row .avatar{flex:none}
+@media (prefers-reduced-motion:no-preference){.page-enter .hd-meter i{animation:growX .6s cubic-bezier(.3,.8,.3,1) .15s backwards;transform-origin:left}}
+.hd-budget .hd-meter{flex:none}

@@ -1,3 +1,10 @@
+# 3.15.0 — Painel da casa
+
+- No computador e no tablet, «Casa» passa a ser um painel com o estado de cada área: ocorrências por resolver, finanças do mês, revisões e garantias dos próximos 60 dias, equilíbrio da semana, registo de horas e pessoas.
+- Cada linha abre o item correspondente; cada cartão tem a ligação para a página completa. «Reportar» e «Registar» ficam à mão no próprio cartão.
+- Cada pessoa só vê os cartões das áreas a que tem acesso.
+- No telemóvel, «Casa» continua a ser a lista de áreas.
+
 # 3.14.0 — Afinações finais
 
 - Navegação, filtros e etiquetas passam a ter formas diferentes. Mudar de vista usa sempre o trilho com a opção ativa em destaque (agora também nas Finanças e nas Compras). Os filtros ativos ficam verdes com um visto. As etiquetas, como «Urgente», são retângulos pequenos que não parecem botões.
