@@ -22,7 +22,7 @@ function todayPage(){
  const {start}=CasaCore.weekRange(t0);const week=Array.from({length:7},(_,i)=>CasaCore.addDays(start,i));
  const dueOn=d=>tasks().filter(t=>t.status!=='done'&&t.dueDate===d&&relevantToMe(t)).length;
  const shop=shopping().filter(x=>!x.purchased);
- const seasonalPending=(canManage()&&typeof seasonal==='function')?seasonal().filter(x=>x.active!==false&&x.months.includes(new Date().getMonth()+1)&&!seasonalTaskFor(x,new Date().getMonth()+1)).length:0;
+ const seasonalList=(canManage()&&typeof seasonal==='function')?seasonal().filter(x=>x.active!==false&&x.months.includes(new Date().getMonth()+1)&&!seasonalTaskFor(x,new Date().getMonth()+1)):[];const seasonalPending=seasonalList.length,seasonalFirst=seasonalList[0];
  const list=(arr,max=6)=>arr.slice(0,max).map(t=>taskRow(t)).join('')+(arr.length>max?`<button type="button" class="more-link" data-action="nav" data-page="tasks">Ver mais ${arr.length-max} em Tarefas ${ico('chevron')}</button>`:'');
  return `<section class="today-hero">
   <div class="today-hero-text"><span class="eyebrow">${esc(dateLabel.toUpperCase())}</span><h1>${hello}, ${esc(first)}.</h1><p>${esc(summary)}</p>
@@ -39,8 +39,8 @@ function todayPage(){
  <div class="today-cards">
   <button type="button" class="today-card" data-action="nav" data-page="shopping"><span class="today-card-head">${ico('cart')}<strong>Compras</strong><span class="count-pill">${shop.length} por comprar</span></span><small>${shop.length?esc(shop.slice(0,5).map(x=>x.title+(x.quantity&&x.quantity!=='1'||x.unit?' '+CasaUnits.format(x.quantity,x.unit):'')).join(' · ')):'A lista está vazia.'}</small></button>
   ${canManage()&&(store.incidents||[]).some(x=>x.status!=='resolved')?(()=>{const o=store.incidents.filter(x=>x.status!=='resolved');return `<button type="button" class="today-card" data-action="nav" data-page="incidents"><span class="today-card-head">${ico('alert')}<strong>Ocorrências</strong><span class="count-pill">${o.length}</span></span><small>${esc(o.slice(0,3).map(x=>x.title).join(' · '))}</small></button>`;})():''}
-  ${seasonalPending?`<button type="button" class="today-card" data-action="nav" data-page="tasks" data-view="calendar"><span class="today-card-head">${ico('calendar')}<strong>${esc(MONTHS_FULL[new Date().getMonth()][0].toUpperCase()+MONTHS_FULL[new Date().getMonth()].slice(1))} na casa</strong><span class="count-pill">${seasonalPending}</span></span><small>${plural(seasonalPending,'trabalho sazonal sugerido','trabalhos sazonais sugeridos')} para este mês.</small></button>`:''}
- </div>`;
+ </div>
+ ${seasonalFirst?`<section class="season-today"><h2 class="group-title">Este mês na casa <span>${seasonalPending}</span></h2>${seasonalCard(seasonalFirst,new Date().getMonth()+1,true)}${seasonalPending>1?`<button type="button" class="more-link" data-action="nav" data-page="tasks" data-view="calendar">Ver as ${seasonalPending} sugestões do mês ${ico('chevron')}</button>`:''}</section>`:''}`;
 }
 
 /* ───────────── Plano do dia ───────────── */

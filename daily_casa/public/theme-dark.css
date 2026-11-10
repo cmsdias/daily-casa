@@ -381,6 +381,12 @@ html[data-theme="dark"] .orphan-row small{color:#dfcead}
 html[data-theme="dark"] .worklog-edit{border-bottom:1px solid #39453e}
 html[data-theme="dark"] .worklog-edit svg{color:#9ba39d}
 html[data-theme="dark"] .worklog-edit:hover svg{color:#d4e5dc}
+html[data-theme="dark"] .done-bar{background:#26302a;border:1px solid #3c4a42}
+html[data-theme="dark"] .task-filter-panel{background:#1c2520;border:1px solid #3c4a42}
+html[data-theme="dark"] .task-more .task-more-sum{color:#abb3ae}
+html[data-theme="dark"] .pe-admin-zone{border-top:1px solid #3c4a42}
+html[data-theme="dark"] .completion-followup .undo-btn{border:1px solid #38383840}
+@media (prefers-reduced-motion:no-preference){html[data-theme="dark"] .completing .task-title{color:#9ba39d}html[data-theme="dark"] .has-ind::before{background:#1c2520}}
 html[data-theme="dark"] .dp-day.sel{background:#C9A568;color:#17261E}
 @media (max-width:650px){html[data-theme="dark"] .mobile-nav.tab-nav{background:var(--dk-surface);border:1px solid #2C3A32;box-shadow:0 14px 30px -12px rgba(0,0,0,.7)}html[data-theme="dark"] .mobile-nav.tab-nav>.tab-item{color:#A3AFA7}html[data-theme="dark"] .mobile-nav.tab-nav>.tab-item.active{background:#2E3B34;color:#E7ECE8}}
 html[data-theme="dark"] .dp-day.out{color:#58665E}
@@ -445,6 +451,10 @@ html[data-theme="dark"] .index-ico,html[data-theme="dark"] .eq-ico,html[data-the
 html[data-theme="dark"] .view-tabs button.active,html[data-theme="dark"] .seg-control button[aria-checked="true"]{background:var(--dk-raised);color:var(--dk-ink)}
 html[data-theme="dark"] .chip.on,html[data-theme="dark"] .chip[aria-pressed="true"],html[data-theme="dark"] .qt-chip.on,html[data-theme="dark"] .ob-type.on{background:var(--brand-gold);border-color:var(--brand-gold);color:#17261E}
 html[data-theme="dark"] .qt-chip.on button{background:#17261e2e;color:#17261E}
+html[data-theme="dark"] .has-ind::before{background:#35443b;box-shadow:inset 0 0 0 1px #ffffff12}
+@media (prefers-reduced-motion:no-preference){html[data-theme="dark"] .view-tabs.has-ind button.active,html[data-theme="dark"] .seg-control.has-ind button[aria-checked="true"]{background:transparent}}
+html[data-theme="dark"] .filter-dot{box-shadow:0 0 0 2px var(--dk-surface)}
+html[data-theme="dark"] .wx-car{border-color:var(--dk-muted)}
 html[data-theme="dark"] i.done,html[data-theme="dark"] .balance-bar i.done{background:#8fb39b}
 html[data-theme="dark"] .store-mode{background:var(--dk-page)}
 html[data-theme="dark"] .store-head{background:#0f1a14;border-bottom:1px solid var(--dk-line)}

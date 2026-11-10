@@ -48,16 +48,20 @@ function weatherCard(){
  const tip=w.settings.tips?wxTip(days):null;
  const updated=new Date(d.fetchedAt).toLocaleTimeString('pt-PT',{hour:'2-digit',minute:'2-digit'});
  const warn=(d.warnings||[])[0];
- return `<section class="wx-card" aria-label="Meteorologia">
-  <div class="wx-head"><span class="eyebrow">TEMPO EM CASA${d.locationName?' · '+esc(d.locationName.toUpperCase()):''}</span>${gear}</div>
-  <div class="wx-now">${wxIcon(type,52)}<span class="wx-temp">${esc(String(temp))}°</span><span class="wx-cond"><b>${esc(desc||'')}</b><small>Máx. ${day0.tMax}° · Mín. ${day0.tMin}°</small></span></div>
-  <div class="wx-facts"><span>${ico('droplet')} ${day0.prob}% de chuva</span>${day0.windClass?`<span>${ico('wind')} Vento ${esc(day0.windClass)}${day0.windDir?' de '+esc(day0.windDir):''}</span>`:''}</div>
+ const open=wxOpen();
+ return `<section class="wx-card wx-compact ${open?'is-open':''}" aria-label="Meteorologia">
+  <button type="button" class="wx-line" data-action="weather-toggle" aria-expanded="${open}" aria-controls="wx-more">${wxIcon(type,30)}<span class="wx-temp">${esc(String(temp))}°</span><span class="wx-cond"><b>${esc(desc||'')}</b><small>${day0.prob}% de chuva · ${day0.tMin}°–${day0.tMax}°${d.locationName?' · '+esc(d.locationName):''}</small></span><span class="wx-car" aria-hidden="true"></span><span class="sr-only">Previsão dos próximos dias</span></button>
   ${warn?`<div class="wx-warn wx-${esc(warn.level)}"><b>Aviso ${({yellow:'amarelo',orange:'laranja',red:'vermelho'})[warn.level]||''}: ${esc(warn.type)}</b>${warn.text?`<span>${esc(warn.text)}</span>`:''}</div>`:''}
   ${tip?`<div class="wx-tip wx-tip-${tip.kind}"><b>${esc(tip.head)}</b> ${esc(tip.text)}</div>`:''}
-  <div class="wx-days">${days.slice(0,5).map((x,i)=>`<div class="wx-day"><span>${i===0?'Hoje':WX_WD_SHORT[new Date(x.date+'T12:00:00Z').getUTCDay()]}</span>${wxIcon(x.type,26)}<b>${x.tMax}°</b><small>${x.tMin}°</small><em class="${x.prob>=40?'wet':''}">${x.prob}%</em></div>`).join('')}</div>
-  <p class="wx-src">Fonte: ${d.source==='ha'?'Home Assistant':'IPMA'}${d.now?.station?' · '+esc(d.now.station):''} · atualizado às ${esc(updated)}${demo?' · valores de exemplo':''}</p>
+  <div class="wx-more" id="wx-more"><div>
+   ${day0.windClass?`<div class="wx-facts"><span>${ico('wind')} Vento ${esc(day0.windClass)}${day0.windDir?' de '+esc(day0.windDir):''}</span></div>`:''}
+   <div class="wx-days">${days.slice(0,5).map((x,i)=>`<div class="wx-day"><span>${i===0?'Hoje':WX_WD_SHORT[new Date(x.date+'T12:00:00Z').getUTCDay()]}</span>${wxIcon(x.type,26)}<b>${x.tMax}°</b><small>${x.tMin}°</small><em class="${x.prob>=40?'wet':''}">${x.prob}%</em></div>`).join('')}</div>
+   <div class="wx-foot"><p class="wx-src">Fonte: ${d.source==='ha'?'Home Assistant':'IPMA'}${d.now?.station?' · '+esc(d.now.station):''} · atualizado às ${esc(updated)}${demo?' · valores de exemplo':''}</p>${gear}</div>
+  </div></div>
  </section>`;
 }
+// 3.12: o cartão abre e fecha sem redesenhar a página; a escolha fica guardada neste dispositivo.
+function wxOpen(){try{return localStorage.getItem('dc-wx-open')==='1';}catch{return false;}}
 
 /* Definições */
 modalRenderers['weather-settings']=holder=>{
@@ -84,6 +88,7 @@ modalRenderers['weather-settings']=holder=>{
  }
 };
 actionHandlers.push(async(name,el)=>{
+ if(name==='weather-toggle'){const c=el.closest('.wx-card');const o=!c.classList.contains('is-open');c.classList.toggle('is-open',o);el.setAttribute('aria-expanded',o);try{localStorage.setItem('dc-wx-open',o?'1':'0');}catch{}return true;}
  if(name==='weather-settings'){modal={type:'weather-settings',locations:demo?WX_DEMO_LOCS:null};renderModal();return true;}
  if(name!=='weather-toggle')return false;
  const key=el.dataset.key;const on=el.getAttribute('aria-checked')!=='true';el.setAttribute('aria-checked',String(on));
