@@ -82,7 +82,7 @@ const config=()=>({floors:Array.isArray(store.settings?.floors)?store.settings.f
 let durationLimit=15;let timeMode=false;let advancedTask=false;let taskFiltersOpen=false;let shoppingView='open';let mobileMore=false;try{mobileMore=localStorage.getItem('casa-nav-expanded')==='true';}catch{}
 const who=id=>people().find(p=>p.id===id);
 const owner=id=>id?who(id)?.name||'Pessoa removida':'Por atribuir';
-const initials=name=>String(name||'?').split(/\s+/).filter(Boolean).slice(0,2).map(x=>x[0].toUpperCase()).join('');
+const initials=name=>{const w=String(name||'').replace(/\([^)]*\)/g,' ').split(/\s+/).map(x=>x.replace(/^[^\p{L}\p{N}]+/u,'')).filter(Boolean);return w.length?w.slice(0,2).map(x=>[...x][0].toUpperCase()).join(''):'?';};
 const MONTHS_PT=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];
 const shortDate=d=>{if(!d)return 'Sem data';const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(d);if(!m)return d;const label=`${Number(m[3])} ${MONTHS_PT[Number(m[2])-1]}`;return m[1]===String(new Date().getFullYear())?label:`${label} ${m[1]}`;};
 const MONTHS_FULL=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];

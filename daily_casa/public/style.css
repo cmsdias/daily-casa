@@ -1996,3 +1996,10 @@ input.dp-native{position:absolute!important;width:1px!important;height:1px!impor
 .worklog-edit svg{flex:0 0 auto;width:16px;height:16px;color:#8a938d;margin-top:3px}
 .worklog-edit:hover svg{color:#17261e}
 .worklog-edit:focus-visible{outline:2px solid var(--brand-gold);outline-offset:2px;border-radius:8px}
+
+/* 3.11.6 — afinações da análise de UX: iniciais legíveis, cartões de pessoa à altura do conteúdo, barra do património */
+.person-card .avatar.gold:not(.has-photo),.sidebar-bottom .avatar.gold:not(.has-photo){background:#17261e;color:#ecd9b6}
+.team-grid{align-items:start}
+.person-card{flex-wrap:nowrap}
+.fin-bar{overflow:visible;border-radius:0;gap:3px}
+.fin-bar span{min-width:8px;border-radius:5px}

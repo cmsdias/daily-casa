@@ -1,3 +1,10 @@
+# 3.11.6 — Afinações visuais
+
+- As iniciais ignoram o que está entre parênteses: «Marta (colaboradora)» passa a «M» em vez de «M(».
+- Iniciais legíveis nos cartões das Pessoas e no perfil da barra lateral (claro sobre verde).
+- Os cartões das Pessoas ficam com a altura do conteúdo, sem espaço vazio.
+- Barra do património com segmentos separados e arredondados; os valores pequenos deixam de ficar cortados.
+
 # 3.11.5 — Novo ícone para Hoje
 
 - O separador Hoje passa a ter um calendário em vez do sol, para não se confundir com a meteorologia.
