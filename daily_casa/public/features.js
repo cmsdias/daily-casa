@@ -459,3 +459,42 @@ function taskMoreRefresh(form){const sum=form?.querySelector('.task-more-sum');i
  const co=form.querySelectorAll('[data-share-field] [aria-pressed="true"],[data-share-field] input:checked').length;
  sum.textContent=taskMoreSummary({kind:v.kind,priority:v.priority,repeat:v.repeat,estimatedMinutes:Number(v.estimatedMinutes)||0,subtasks:String(v.subtasksText||'').split('\n').filter(x=>x.trim()),visibility:v.visibility,status:v.status,notes:String(v.notes||'').trim(),coAssignees:Array(co).fill(0)});}
 ['change','input'].forEach(ev=>document.addEventListener(ev,e=>{const f=e.target.closest?.('#task-form');if(f&&e.target.closest('#task-advanced'))taskMoreRefresh(f);}));
+
+/* 3.13 — Registo de horas: primeiro o que foi feito, agrupado por dia; registar numa janela. */
+let worklogPeriod='month';
+const WL_PERIODS=[['month','Este mês'],['prev','Mês anterior'],['all','Tudo']];
+function worklogFilter(){const m=today().slice(0,7);if(worklogPeriod==='all')return()=>true;
+ let k=m;if(worklogPeriod==='prev'){const [y,mm]=m.split('-').map(Number);const d=new Date(Date.UTC(y,mm-2,15));k=d.toISOString().slice(0,7);}
+ return x=>(x.date||'').startsWith(k);}
+const fmtDur=m=>{m=Number(m)||0;const h=Math.floor(m/60),r=m%60;return h?`${h} h${r?' '+String(r).padStart(2,'0'):''}`:`${r} min`;};
+function worklogDayLabel(d){const t=today();const y=CasaCore.addDays(t,-1);const dt=new Date(d+'T12:00:00Z');
+ const long=dt.toLocaleDateString('pt-PT',{day:'numeric',month:'short',timeZone:'UTC'}).replace('.','');
+ const wd=dt.toLocaleDateString('pt-PT',{weekday:'long',timeZone:'UTC'});
+ return d===t?`Hoje · ${long}`:d===y?`Ontem · ${long}`:`${wd[0].toUpperCase()+wd.slice(1)} · ${long}`;}
+function worklogRow(x){const mine=canManage()||demo||x.userId===store.user?.id||x.actor===store.user?.id;
+ const who=people().find(p=>p.id===x.userId);const task=x.taskId?tasks().find(t=>t.id===x.taskId):null;
+ const meta=[firstNameOf(x.userId),task?task.title:'',task?.room&&task.room!=='Geral'?roomShort(task.room):''].filter(Boolean).map(esc).join(' · ');
+ const inner=`${avatarHtml(who||{name:owner(x.userId)},'mini')}<span class="wl-text"><strong>${esc(x.note||'Trabalho')}</strong><small>${meta}</small></span><em>${esc(fmtDur(x.minutes))}</em>`;
+ return mine?`<button type="button" class="wl-row" data-action="worklog-edit" data-id="${esc(x.id)}" aria-label="Editar o registo «${esc(x.note||'')}»">${inner}</button>`:`<div class="wl-row">${inner}</div>`;}
+function worklogsPage(){
+ const logs=workLogs().filter(worklogFilter()).slice().sort((a,b)=>(b.date||'').localeCompare(a.date||'')||String(b.createdAt||'').localeCompare(String(a.createdAt||'')));
+ const total=logs.reduce((n,x)=>n+Number(x.minutes||0),0);const ppl=new Set(logs.map(x=>x.userId)).size;
+ const days=[];for(const x of logs){const last=days[days.length-1];if(last&&last.date===x.date)last.items.push(x);else days.push({date:x.date,items:[x]});}
+ const seg=`<div class="seg-control seg-small wl-period" role="radiogroup" aria-label="Período">${WL_PERIODS.map(([k,l])=>`<button type="button" role="radio" aria-checked="${worklogPeriod===k}" data-action="worklog-period" data-period="${k}">${l}</button>`).join('')}</div>`;
+ const stats=`<div class="wl-stats"><div><strong>${esc(fmtDur(total))}</strong><span>registadas</span></div><div><strong>${logs.length}</strong><span>${logs.length===1?'registo':'registos'}</span></div><div><strong>${ppl}</strong><span>${ppl===1?'pessoa':'pessoas'}</span></div></div>`;
+ const list=days.length?days.map(d=>`<section class="wl-day"><h2 class="wl-day-head"><span>${esc(worklogDayLabel(d.date))}</span><span>${esc(fmtDur(d.items.reduce((n,x)=>n+Number(x.minutes||0),0)))}</span></h2><div class="panel wl-list">${d.items.map(worklogRow).join('')}</div></section>`).join(''):`<div class="panel">${empty('clock','Sem registos neste período','Toca em «Registar trabalho» para anotar o que foi feito e quanto tempo levou.')}</div>`;
+ return `${head('Registo de horas','Trabalhos feitos, datas e tempo de cada pessoa.',false)}${seg}${stats}${list}${hoursSummary()}<div class="wl-cta"><button type="button" class="button primary" data-action="worklog-new">${ico('plus-square')} Registar trabalho</button></div>`;}
+modalRenderers['worklog-new']=holder=>{const preset=modal.taskId||'';
+ const body=`<form id="worklog-form-new"><div class="field"><label for="wn-note">O que foi feito</label><textarea id="wn-note" name="note" rows="3" maxlength="1000" required placeholder="Ex.: Limpeza geral do 1.º piso">${esc(preset?(tasks().find(t=>t.id===preset)?.title||''):'')}</textarea></div>
+ <div class="form-row"><div class="field"><label for="wn-date">Data</label><input id="wn-date" type="date" name="date" required value="${esc(today())}" max="${esc(today())}"/></div><div class="field"><label for="wn-min">Duração (min)</label><input id="wn-min" type="number" inputmode="numeric" name="minutes" min="1" max="1440" required value="30"/></div></div>
+ ${canManage()?`<div class="field"><label for="wn-who">Quem fez</label><select id="wn-who" name="userId">${people().filter(p=>p.active!==false).map(p=>option(p.id,p.name,store.user.id)).join('')}</select></div>`:''}
+ <div class="field"><label for="wn-task">Tarefa relacionada</label><select id="wn-task" name="taskId">${option('','Sem tarefa associada',preset)}${tasks().map(t=>option(t.id,t.title,preset)).join('')}</select></div>
+ <div class="modal-actions"><span class="spacer"></span><button type="button" class="button" data-action="close">Cancelar</button><button type="submit" class="button primary">${ico('check')} Guardar</button></div></form>`;
+ holder.innerHTML=modalShell({title:'Registar trabalho',sub:'O que foi feito e quanto tempo levou.',body});
+ const f=holder.querySelector('#worklog-form-new');setTimeout(()=>{const n=f.querySelector('#wn-note');n.focus();n.setSelectionRange(n.value.length,n.value.length);},60);
+ f.addEventListener('submit',async ev=>{ev.preventDefault();const v=Object.fromEntries(new FormData(f));v.minutes=Number(v.minutes);const b=f.querySelector('[type=submit]');b.disabled=true;
+  try{await api('/api/worklogs','POST',v);modal=null;await reload();toast('Trabalho registado.');}catch(err){toast(err.message);b.disabled=false;}});};
+actionHandlers.push(async(name,el)=>{
+ if(name==='worklog-period'){worklogPeriod=el.dataset.period;render();return true;}
+ if(name==='worklog-new'){modal={type:'worklog-new'};renderModal();return true;}
+ return false;});
