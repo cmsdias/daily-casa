@@ -2128,3 +2128,36 @@ button.wl-row:focus-visible{outline:2px solid var(--brand-gold);outline-offset:2
  .table-panel .task-list:has(>.shopping-category){columns:2;column-gap:28px}
  .table-panel .task-list>.shopping-category{break-inside:avoid}
 }
+
+/* ───────── 3.14 — Afinações: famílias de comprimidos, texto a 13 px, movimento nas compras ───────── */
+/* Navegação: o mesmo trilho segmentado em todo o lado (Finanças e Compras passam a usá-lo) */
+.fin-tabs{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(max-content,1fr);gap:4px;padding:4px;border-radius:14px;background:#eef1ec;border:1px solid var(--line);margin:0 0 18px;overflow-x:auto;scrollbar-width:none}
+.fin-tabs::-webkit-scrollbar{display:none}
+.fin-tabs button{border:0;background:transparent;color:#4a554d;border-radius:10px;padding:0 12px;min-height:38px;font:600 13.5px inherit;font-family:inherit;cursor:pointer;white-space:nowrap}
+.fin-tabs button.active{background:#fff;border-color:transparent;color:var(--brand-green);box-shadow:0 1px 3px #0000001f}
+.shopping-switch{gap:4px;padding:4px;border:1px solid var(--line);background:#eef1ec}
+.shopping-switch button{min-height:38px;font-weight:600}
+.shopping-switch button.active{font-weight:650;box-shadow:0 1px 3px #0000001f}
+@media (prefers-reduced-motion:no-preference){
+ .fin-tabs.has-ind button.active,.shopping-switch.has-ind button.active{background:transparent;box-shadow:none}
+ .fin-tabs.has-ind::before{z-index:0}
+}
+/* Filtro: ativo fica verde com um visto */
+.chip.on::before,.chip[aria-pressed="true"]::before{content:"";flex:none;width:9px;height:5px;border-left:2px solid currentColor;border-bottom:2px solid currentColor;transform:rotate(-45deg) translateY(-1px);margin-right:1px}
+/* Etiqueta: só informa — retângulo pequeno, sem contorno; contagens em texto simples */
+.status,.person-badge,.tag,.priority-word{border-radius:6px}
+.status{font-size:11px;padding:3px 7px}
+.person-badge{padding:2px 7px}
+.count-pill{background:transparent;padding:0;border-radius:0;color:var(--muted);font-weight:600;font-size:12.5px;font-variant-numeric:tabular-nums}
+/* Texto secundário a 13 px no telemóvel */
+@media (max-width:650px){
+ .task-title{font-size:14.5px}
+ .task-meta,.page-subtitle,.shopping-line .shop-name small,.field-help,.index-text small,.fin-line small,.wl-text small,.wl-stats span,.wx-line .wx-cond small,.fc-note,.today-hero-text p,.person-id .sub,.fin-mini span,.fin-mini small{font-size:13px}
+ .wx-src{font-size:12.5px}
+}
+/* Compras: marcar como comprado */
+@media (prefers-reduced-motion:no-preference){
+ .shop-check.pop{animation:checkPop .34s cubic-bezier(.3,1.4,.5,1)}
+ .shopping-line.buying .shop-name span{text-decoration:line-through;opacity:.55;transition:opacity .2s}
+ .shopping-line.buying{overflow:hidden;transition:opacity .2s ease .3s,transform .2s ease .3s,height .26s ease .36s,padding .26s ease .36s,min-height .26s ease .36s,border-width .26s ease .36s;opacity:0;transform:translateX(12px);height:0!important;min-height:0!important;padding-top:0!important;padding-bottom:0!important;border-bottom-width:0!important}
+}

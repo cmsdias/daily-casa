@@ -1,3 +1,11 @@
+# 3.14.0 — Afinações finais
+
+- Navegação, filtros e etiquetas passam a ter formas diferentes. Mudar de vista usa sempre o trilho com a opção ativa em destaque (agora também nas Finanças e nas Compras). Os filtros ativos ficam verdes com um visto. As etiquetas, como «Urgente», são retângulos pequenos que não parecem botões.
+- No telemóvel, o texto secundário (detalhes das tarefas, subtítulos, fontes) sobe para 13 px e os títulos das tarefas para 14,5 px.
+- Marcar uma compra: depois da confirmação, o nome fica riscado e a linha recolhe.
+- Os grupos das Tarefas (Atrasadas, Hoje, Esta semana…) abrem e fecham a deslizar.
+- No tema escuro, a opção ativa das Finanças e das Compras deixa de ser dourada e segue o resto da navegação.
+
 # 3.13.0 — Registo de horas, tendências e duas colunas
 
 - Registo de horas: abre pelo resumo do período (Este mês, Mês anterior ou Tudo) e pelos registos agrupados por dia, com o total de cada dia.
