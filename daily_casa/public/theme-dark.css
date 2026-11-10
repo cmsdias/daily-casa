@@ -402,6 +402,10 @@ html[data-theme="dark"] .fc-area{fill:#aed0bb}
 html[data-theme="dark"] .fc-dot{fill:#c8a76f;stroke:#ffffff}
 html[data-theme="dark"] .fc-note{color:#adb7ad}
 html[data-theme="dark"] .fc-table th,html[data-theme="dark"] .fc-table td{border-top:1px solid #3b443e}
+html[data-theme="dark"] .fin-tabs{background:#26302a}
+html[data-theme="dark"] .fin-tabs button{color:#bdc6bf}
+html[data-theme="dark"] .fin-tabs button.active{background:#1c2520}
+html[data-theme="dark"] .shopping-switch{background:#26302a}
 html[data-theme="dark"] .dp-day.sel{background:#C9A568;color:#17261E}
 @media (max-width:650px){html[data-theme="dark"] .mobile-nav.tab-nav{background:var(--dk-surface);border:1px solid #2C3A32;box-shadow:0 14px 30px -12px rgba(0,0,0,.7)}html[data-theme="dark"] .mobile-nav.tab-nav>.tab-item{color:#A3AFA7}html[data-theme="dark"] .mobile-nav.tab-nav>.tab-item.active{background:#2E3B34;color:#E7ECE8}}
 html[data-theme="dark"] .dp-day.out{color:#58665E}
@@ -479,6 +483,11 @@ html[data-theme="dark"] .fc-ax{fill:var(--dk-muted)}
 html[data-theme="dark"] .fc-dot{fill:#d4b075;stroke:var(--dk-surface)}
 html[data-theme="dark"] .fc-tip{background:var(--dk-ink);color:#131916}
 html[data-theme="dark"] .wl-stats>div{background:var(--dk-surface);border-color:var(--dk-line)}
+html[data-theme="dark"] .fin-tabs,html[data-theme="dark"] .shopping-switch{background:#26302a;border-color:var(--dk-line)}
+html[data-theme="dark"] .fin-tabs button,html[data-theme="dark"] .shopping-switch button{color:#bdc6bf;background:transparent;border-color:transparent}
+html[data-theme="dark"] .fin-tabs button.active,html[data-theme="dark"] .shopping-switch button.active{background:#35443b!important;border-color:transparent!important;color:var(--dk-ink)!important;box-shadow:none}
+@media (prefers-reduced-motion:no-preference){html[data-theme="dark"] .fin-tabs.has-ind button.active,html[data-theme="dark"] .shopping-switch.has-ind button.active{background:transparent!important}}
+html[data-theme="dark"] .count-pill{background:transparent;color:var(--dk-muted)}
 html[data-theme="dark"] i.done,html[data-theme="dark"] .balance-bar i.done{background:#8fb39b}
 html[data-theme="dark"] .store-mode{background:var(--dk-page)}
 html[data-theme="dark"] .store-head{background:#0f1a14;border-bottom:1px solid var(--dk-line)}
