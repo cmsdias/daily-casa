@@ -406,6 +406,21 @@ html[data-theme="dark"] .fin-tabs{background:#26302a}
 html[data-theme="dark"] .fin-tabs button{color:#bdc6bf}
 html[data-theme="dark"] .fin-tabs button.active{background:#1c2520}
 html[data-theme="dark"] .shopping-switch{background:#26302a}
+html[data-theme="dark"] .hd-card{background:#1c2520;border:1px solid #3c4a42}
+html[data-theme="dark"] .hd-head small{color:#adb7ad}
+html[data-theme="dark"] .hd-row{border-top:1px solid #3b443e}
+html[data-theme="dark"] .hd-text small{color:#adb7ad}
+html[data-theme="dark"] .hd-tag.bad{background:#242e28;color:#d3918b}
+html[data-theme="dark"] .hd-tag.warn{background:#453a21;color:#d9c7a6}
+html[data-theme="dark"] .hd-tag.ok{background:#27312b;color:#aecfbc}
+html[data-theme="dark"] .hd-more{color:#decaa7}
+html[data-theme="dark"] .hd-empty{color:#adb7ad}
+html[data-theme="dark"] .hd-empty svg{color:#aed0bb}
+html[data-theme="dark"] .hd-note{color:#adb7ad}
+html[data-theme="dark"] .hd-kv span{color:#adb7ad}
+html[data-theme="dark"] .hd-big small{color:#adb7ad}
+html[data-theme="dark"] .hd-meter{background:#28332c}
+html[data-theme="dark"] .hd-budget small{color:#adb7ad}
 html[data-theme="dark"] .dp-day.sel{background:#C9A568;color:#17261E}
 @media (max-width:650px){html[data-theme="dark"] .mobile-nav.tab-nav{background:var(--dk-surface);border:1px solid #2C3A32;box-shadow:0 14px 30px -12px rgba(0,0,0,.7)}html[data-theme="dark"] .mobile-nav.tab-nav>.tab-item{color:#A3AFA7}html[data-theme="dark"] .mobile-nav.tab-nav>.tab-item.active{background:#2E3B34;color:#E7ECE8}}
 html[data-theme="dark"] .dp-day.out{color:#58665E}
@@ -488,6 +503,17 @@ html[data-theme="dark"] .fin-tabs button,html[data-theme="dark"] .shopping-switc
 html[data-theme="dark"] .fin-tabs button.active,html[data-theme="dark"] .shopping-switch button.active{background:#35443b!important;border-color:transparent!important;color:var(--dk-ink)!important;box-shadow:none}
 @media (prefers-reduced-motion:no-preference){html[data-theme="dark"] .fin-tabs.has-ind button.active,html[data-theme="dark"] .shopping-switch.has-ind button.active{background:transparent!important}}
 html[data-theme="dark"] .count-pill{background:transparent;color:var(--dk-muted)}
+html[data-theme="dark"] .hd-card{background:var(--dk-surface);border-color:var(--dk-line)}
+html[data-theme="dark"] .hd-row{border-color:var(--dk-line)}
+html[data-theme="dark"] .hd-more{color:#e2cdb0}
+html[data-theme="dark"] .hd-meter{background:#2a352e}
+html[data-theme="dark"] .hd-meter i{background:#7fae8f}
+html[data-theme="dark"] .hd-meter.warn i{background:#d4b075}
+html[data-theme="dark"] .hd-meter.over i{background:#e08d84}
+html[data-theme="dark"] .hd-tag.bad{background:#3a2522;color:#e08d84}
+html[data-theme="dark"] .hd-tag.warn{background:#352d1e;color:#e2c58f}
+html[data-theme="dark"] .hd-tag.ok{background:#1f3327;color:#7fc79b}
+html[data-theme="dark"] .hd-empty svg{color:#7fc79b}
 html[data-theme="dark"] i.done,html[data-theme="dark"] .balance-bar i.done{background:#8fb39b}
 html[data-theme="dark"] .store-mode{background:var(--dk-page)}
 html[data-theme="dark"] .store-head{background:#0f1a14;border-bottom:1px solid var(--dk-line)}
