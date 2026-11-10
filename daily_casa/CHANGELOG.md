@@ -1,3 +1,10 @@
+# 3.13.0 — Registo de horas, tendências e duas colunas
+
+- Registo de horas: abre pelo resumo do período (Este mês, Mês anterior ou Tudo) e pelos registos agrupados por dia, com o total de cada dia.
+- «Registar trabalho» passa a ser um botão fixo no fundo, que abre o formulário numa janela. Depois de concluir uma tarefa, «Registar tempo» abre a mesma janela já ligada à tarefa.
+- Finanças: o Resumo mostra as despesas dos últimos 6 meses (com a média dos meses fechados) e a evolução do património líquido. Tocar numa barra ou passar pela linha mostra o valor; «Ver em tabela» mostra os números.
+- Em ecrãs largos, as tarefas aparecem em duas colunas (atrasadas e hoje à esquerda, o resto à direita) e as compras com várias categorias também.
+
 # 3.12.0 — Mais simples e com mais movimento
 
 - Tarefas: só ficam à vista as vistas e Pontuais/Rotinas. Pesquisa, filtros e «Concluídas» estão no botão «Filtros», que mostra um ponto dourado quando há um filtro ativo.

@@ -2075,3 +2075,56 @@ input.dp-native{position:absolute!important;width:1px!important;height:1px!impor
 @keyframes growX{from{transform:scaleX(0)}}
 .meter i,.fin-bar span{transform-origin:left}
 @property --p{syntax:'<number>';inherits:true;initial-value:0}
+
+/* ───────── 3.13 — Registo de horas, tendência nas Finanças, listas em duas colunas ───────── */
+.wl-period{margin:0 0 12px}
+.wl-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin:0 0 16px}
+.wl-stats>div{background:#fff;border:1px solid #dfe4dc;border-radius:16px;padding:12px 14px;display:flex;flex-direction:column;gap:2px;min-width:0}
+.wl-stats strong{font-size:clamp(18px,2.6vw,24px);letter-spacing:-.03em;font-variant-numeric:tabular-nums;white-space:nowrap}
+.wl-stats span{font-size:12.5px;color:#657364}
+.wl-day{margin:0 0 14px}
+.wl-day-head{display:flex;justify-content:space-between;gap:10px;margin:0 4px 6px;font-size:11.5px;font-weight:750;letter-spacing:.1em;text-transform:uppercase;color:#657364;font-variant-numeric:tabular-nums}
+.wl-list{padding:4px 14px}
+.wl-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;padding:12px 0;border:0;border-top:1px solid #ecece9;background:none;font:inherit;color:inherit;text-align:left}
+.wl-row:first-child{border-top:0}
+button.wl-row{cursor:pointer}
+button.wl-row:hover strong{text-decoration:underline;text-underline-offset:3px}
+button.wl-row:focus-visible{outline:2px solid var(--brand-gold);outline-offset:2px;border-radius:8px}
+.wl-text{min-width:0;display:flex;flex-direction:column;gap:2px}
+.wl-text strong{font-size:14px;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wl-text small{font-size:12.5px;color:#657364;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wl-row em{font-style:normal;font-weight:650;font-size:13.5px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.wl-cta{position:sticky;bottom:20px;z-index:30;display:flex;justify-content:flex-end;margin-top:16px;pointer-events:none}
+.wl-cta .button{pointer-events:auto;box-shadow:0 12px 28px -10px #0b130e66}
+@media (max-width:650px){.wl-cta{bottom:calc(104px + env(safe-area-inset-bottom,0px))}.wl-cta .button{flex:1}}
+/* Finanças: tendência */
+.fin-trends{display:grid;gap:12px}
+@media (min-width:900px){.fin-trends{grid-template-columns:1fr 1fr}}
+.fc-card .fin-row-head small{color:#657364;font-size:12.5px;font-variant-numeric:tabular-nums}
+.fc-chart{position:relative;margin-top:6px}
+.fc-svg{display:block;width:100%;height:auto;overflow:visible}
+.fc-grid{stroke:#e6eae3;stroke-width:1}
+.fc-ax{fill:#6b766e;font-size:10px;font-family:inherit;font-variant-numeric:tabular-nums}
+.fc-bar{fill:#3e6b50}
+.fc-bar.now{fill:#c9a15f}
+.fc-hit{fill:transparent}
+.fc-col{cursor:pointer;outline:none}
+.fc-col:hover .fc-bar,.fc-col:focus .fc-bar{opacity:.8}
+.fc-col:focus-visible .fc-hit{stroke:#c9a15f;stroke-width:1.5}
+.fc-line{fill:none;stroke:#3e6b50;stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.fc-area{fill:#3e6b50;opacity:.12}
+.fc-dot{fill:#c9a15f;stroke:#fff;stroke-width:2}
+.fc-scrub{fill:transparent;cursor:crosshair;touch-action:pan-y}
+.fc-tip{position:absolute;left:0;top:0;pointer-events:none;background:#17261e;color:#f4f5ef;font-size:12px;font-weight:600;padding:6px 9px;border-radius:9px;white-space:nowrap;transform:translate(-50%,calc(-100% - 6px));opacity:0;transition:opacity .12s;font-variant-numeric:tabular-nums;z-index:2}
+.fc-tip.show{opacity:1}
+.fc-note{display:block;margin-top:6px;font-size:12px;color:#657364}
+.fc-note .link-btn{font-size:12px}
+.fc-table table{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px;font-variant-numeric:tabular-nums}
+.fc-table th,.fc-table td{text-align:left;padding:6px 2px;border-top:1px solid #ecece9}
+.fc-table th:last-child,.fc-table td:last-child{text-align:right}
+/* Computador largo: tarefas em duas colunas, compras por categoria em duas colunas */
+@media (min-width:1180px){
+ .task-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:20px;align-items:start}
+ .table-panel .task-list:has(>.shopping-category){columns:2;column-gap:28px}
+ .table-panel .task-list>.shopping-category{break-inside:avoid}
+}
