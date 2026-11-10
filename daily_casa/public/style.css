@@ -2003,3 +2003,75 @@ input.dp-native{position:absolute!important;width:1px!important;height:1px!impor
 .person-card{flex-wrap:nowrap}
 .fin-bar{overflow:visible;border-radius:0;gap:3px}
 .fin-bar span{min-width:8px;border-radius:5px}
+
+/* ───────── 3.12 — Propostas da análise de UX ───────── */
+/* Tarefas: duas filas de controlos e um botão de filtros */
+.task-tools{display:flex;gap:8px;align-items:center;margin:0 0 12px}
+.task-tools .kind-seg{flex:1;margin:0}
+.filter-btn{flex:none;position:relative;min-height:48px;border-radius:14px;gap:6px}
+.filter-btn svg{width:16px;height:16px}
+.filter-dot{position:absolute;top:8px;right:8px;width:8px;height:8px;border-radius:50%;background:#c9a15f;box-shadow:0 0 0 2px #fff}
+.done-bar{flex:1;display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:48px;padding:0 6px 0 14px;border-radius:14px;background:#eef1ec;border:1px solid #dfe4dc;font-size:14px}
+.task-filter-panel{display:grid;gap:10px;background:#fff;border:1px solid #dfe4dc;border-radius:18px;padding:12px;margin:0 0 14px}
+.task-filter-panel.filters-collapsed{display:none}
+.task-filter-panel .search{margin:0}
+.task-filter-panel .filter-chips{flex-wrap:wrap;overflow:visible;margin:0;padding:0}
+.task-filter-panel .filters{margin:0}
+.task-filter-panel .filters .search{display:none}
+.task-filter-panel>.button.small{justify-self:start}
+@media (prefers-reduced-motion:no-preference){.task-filter-panel{animation:panelIn .2s ease-out}}
+@keyframes panelIn{from{opacity:0;transform:translateY(-6px)}}
+/* Hoje: o tempo numa linha, previsão ao tocar */
+.wx-compact{padding:12px 14px}
+.wx-line{appearance:none;border:0;background:none;padding:0;margin:0;font:inherit;color:inherit;text-align:left;width:100%;display:flex;align-items:center;gap:10px;cursor:pointer;border-radius:12px}
+.wx-line:focus-visible{outline:2px solid var(--brand-gold);outline-offset:3px}
+.wx-line .wx-temp{font-size:26px}
+.wx-line .wx-cond{flex:1}
+.wx-line .wx-cond b{font-size:14px}
+.wx-line .wx-cond small{display:block}
+.wx-car{flex:none;width:8px;height:8px;border-right:2px solid #8a938d;border-bottom:2px solid #8a938d;transform:rotate(45deg);margin:0 6px 4px;transition:transform .25s ease}
+.wx-card.is-open .wx-car{transform:rotate(-135deg);margin-bottom:0;margin-top:4px}
+.wx-compact .wx-tip,.wx-compact .wx-warn{margin-top:10px}
+.wx-more{display:grid;grid-template-rows:0fr;transition:grid-template-rows .3s ease}
+.wx-more>div{overflow:hidden;min-height:0;visibility:hidden;transition:visibility 0s linear .3s}
+.wx-card.is-open .wx-more{grid-template-rows:1fr}
+.wx-card.is-open .wx-more>div{visibility:visible;transition:none}
+.wx-foot{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px}
+.wx-foot .wx-src{margin:0}
+.season-today{margin-top:18px}
+.season-today .season-item{margin-top:6px}
+/* Casa: voltar no telemóvel */
+.back-house{margin-bottom:2px}
+@media (min-width:651px){.back-house{display:none}}
+/* Modal da tarefa: resumo de «Mais opções» */
+.task-more .task-more-sum{margin-left:auto;font-size:12px;font-weight:500;color:#6b766e;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.task-more>span:nth-child(2){flex:none}
+/* Pessoas: acesso e conta dentro de «Editar» */
+.pe-admin-zone{margin-top:18px;padding-top:16px;border-top:1px solid #dfe4dc;display:grid;gap:12px}
+.pe-admin-zone h3{margin:0;font-size:14px}
+.pe-admin-zone .role-choice{width:100%}
+.pe-admin-zone>.button{justify-self:start}
+/* Concluir: o círculo enche, o visto desenha-se e a linha recolhe */
+.completion-followup .undo-btn{background:transparent;color:#e2cdb0;border:1px solid #ffffff40}
+@media (prefers-reduced-motion:no-preference){
+ .task-check.pop{animation:checkPop .34s cubic-bezier(.3,1.4,.5,1)}
+ .task-check.pop svg path{stroke-dasharray:24;stroke-dashoffset:24;animation:sDraw .26s ease-out .06s forwards}
+ .task-row.completing,.plan-item.completing{overflow:hidden;transition:opacity .2s ease .24s,transform .2s ease .24s,height .26s ease .3s,padding .26s ease .3s,margin .26s ease .3s,border-width .26s ease .3s;opacity:0;transform:translateX(10px);height:0!important;padding-top:0!important;padding-bottom:0!important;margin-top:0!important;margin-bottom:0!important;border-top-width:0!important;border-bottom-width:0!important}
+ .completing .task-title{text-decoration:line-through;color:#8a938d}
+ /* Separadores: o indicador desliza */
+ .has-ind{position:relative}
+ .has-ind::before{content:"";position:absolute;left:0;top:0;width:var(--iw);height:var(--ih);transform:translate(var(--ix),var(--iy));border-radius:10px;background:#fff;box-shadow:0 1px 3px #0000001f;transition:transform .26s cubic-bezier(.3,.9,.3,1),width .26s cubic-bezier(.3,.9,.3,1);pointer-events:none}
+ .has-ind.ind-still::before{transition:none}
+ .has-ind>button{position:relative;z-index:1}
+ .view-tabs.has-ind button.active,.seg-control.has-ind button[aria-checked="true"]{background:transparent;box-shadow:none}
+ /* Entrada de página e progresso que enche */
+ #content.page-enter{animation:pageIn .2s ease-out}
+ .page-enter .today-ring,.page-enter .house-score-ring{animation:ringIn .8s cubic-bezier(.3,.8,.3,1) .1s backwards}
+ .page-enter .meter i,.page-enter .fin-bar span{animation:growX .6s cubic-bezier(.3,.8,.3,1) .15s backwards}
+}
+@keyframes checkPop{0%{transform:scale(.8)}60%{transform:scale(1.15)}100%{transform:scale(1)}}
+@keyframes pageIn{from{opacity:0;transform:translateY(6px)}}
+@keyframes ringIn{from{--p:0}}
+@keyframes growX{from{transform:scaleX(0)}}
+.meter i,.fin-bar span{transform-origin:left}
+@property --p{syntax:'<number>';inherits:true;initial-value:0}

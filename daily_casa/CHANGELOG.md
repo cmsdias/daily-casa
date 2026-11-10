@@ -1,3 +1,16 @@
+# 3.12.0 — Mais simples e com mais movimento
+
+- Tarefas: só ficam à vista as vistas e Pontuais/Rotinas. Pesquisa, filtros e «Concluídas» estão no botão «Filtros», que mostra um ponto dourado quando há um filtro ativo.
+- Hoje: o tempo ocupa uma linha, com o aviso útil por baixo. A previsão de cinco dias abre ao tocar e a escolha fica lembrada.
+- Concluir uma tarefa: o círculo enche, o visto desenha-se e a linha recolhe. O aviso «Tarefa concluída» tem o botão «Anular» e mantém o «Registar tempo».
+- Os separadores deslizam para a opção escolhida; o anel do dia e as barras de progresso enchem ao abrir a página.
+- Casa: sai o Calendário (está em Tarefas › Calendário) e o cartão «Casa em ordem» (está em Hoje e em Divisões). No telemóvel, cada página tem «‹ Casa» para voltar.
+- Definições: sai «O teu perfil», que se abre pelo avatar no topo.
+- A sugestão de manutenção do mês aparece em Hoje, com ligação para as restantes.
+- Nova tarefa: à vista ficam o título, o responsável, a data e a divisão. O resto está em «Mais opções», que resume o que já está preenchido.
+- Pessoas: o cartão fica com «Editar» e «Ver tarefas». O perfil de acesso, os dias de acesso e «Desativar conta» estão dentro de «Editar».
+- Quem tem «reduzir movimento» ativo no telemóvel não vê as animações.
+
 # 3.11.6 — Afinações visuais
 
 - As iniciais ignoram o que está entre parênteses: «Marta (colaboradora)» passa a «M» em vez de «M(».

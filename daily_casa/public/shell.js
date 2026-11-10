@@ -44,10 +44,8 @@ function houseStatusLine(id){
  }
 }
 function housePage(){
- const st=roomsStatus();const score=CasaCore.houseScore(st);const bad=Object.values(st).filter(x=>x.level==='bad').length;
- const items=HOUSE_PAGES.filter(x=>x[4]());
+ const items=HOUSE_PAGES.filter(x=>x[0]!=='calendar'&&x[4]());
  return `${head('Casa','Tudo o que não é do dia a dia, num só sítio.',false)}
- ${score!=null?`<button type="button" class="house-score" data-action="nav" data-page="tasks" data-view="rooms"><span class="house-score-ring" style="--p:${score}"><b>${score}%</b></span><span><strong>Casa em ordem</strong><small>${bad?`${plural(bad,'divisão precisa','divisões precisam')} de atenção`:'Todas as divisões com rotinas estão em dia'} · ver divisões</small></span>${ico('chevron')}</button>`:''}
  <nav class="index-list" aria-label="Secções da casa">${items.map(([id,label,icon])=>`<button type="button" class="index-row" data-action="nav" data-page="${id}"><span class="index-ico">${ico(icon)}</span><span class="index-text"><strong>${esc(label)}</strong><small>${esc(houseStatusLine(id))}</small></span>${ico('chevron','index-chev')}</button>`).join('')}</nav>`;
 }
 
@@ -64,8 +62,7 @@ function settingsPage(){
  const sec=SETTINGS_SECTIONS.find(x=>x[0]===settingsSection);
  if(!sec){
   if(isAdmin()&&!backupsData&&!demo)queueMicrotask(async()=>{try{backupsData=await api('/api/backups');}catch{backupsData={backups:[]};}if(page==='settings'&&!settingsSection&&!modal)render();});
-  return `${head('Definições','A tua casa e os teus dados, sempre sob controlo.',false)}<nav class="index-list" aria-label="Secções das definições">${SETTINGS_SECTIONS.filter(([id])=>id!=='security'||(isAdmin()&&!demo)).map(([id,label,icon,status])=>`<button type="button" class="index-row" data-action="settings-open" data-section="${id}"><span class="index-ico">${ico(icon)}</span><span class="index-text"><strong>${esc(label)}</strong><small>${esc(status())}</small></span>${ico('chevron','index-chev')}</button>`).join('')}</nav>
-  <button type="button" class="index-row index-row-solo" data-action="profile-open"><span class="index-ico">${avatarHtml(me(),'mini')}</span><span class="index-text"><strong>O teu perfil</strong><small>Fotografia, contactos, palavra-passe e terminar sessão</small></span>${ico('chevron','index-chev')}</button>`;
+  return `${head('Definições','A tua casa e os teus dados, sempre sob controlo.',false)}<nav class="index-list" aria-label="Secções das definições">${SETTINGS_SECTIONS.filter(([id])=>id!=='security'||(isAdmin()&&!demo)).map(([id,label,icon,status])=>`<button type="button" class="index-row" data-action="settings-open" data-section="${id}"><span class="index-ico">${ico(icon)}</span><span class="index-text"><strong>${esc(label)}</strong><small>${esc(status())}</small></span>${ico('chevron','index-chev')}</button>`).join('')}</nav>`;
  }
  const back=`<button type="button" class="back-link" data-action="settings-open" data-section="">${ico('back')} Definições</button>`;
  const title=(t,s)=>`${back}${head(t,s,false)}`;
