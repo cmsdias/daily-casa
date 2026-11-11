@@ -2209,3 +2209,9 @@ button.wl-row:focus-visible{outline:2px solid var(--brand-gold);outline-offset:2
 .hd-people-list .hd-row .avatar{flex:none}
 @media (prefers-reduced-motion:no-preference){.page-enter .hd-meter i{animation:growX .6s cubic-bezier(.3,.8,.3,1) .15s backwards;transform-origin:left}}
 .hd-budget .hd-meter{flex:none}
+
+/* 3.16 — Trabalho feito em conjunto */
+.wl-who .rotation-picks{display:flex;flex-wrap:wrap;gap:6px}
+.wl-who .day-chip-check.locked span{cursor:default}
+.wl-avs{display:inline-flex;flex:none}
+.wl-avs .avatar+.avatar{margin-left:-10px;box-shadow:0 0 0 2px #fff}

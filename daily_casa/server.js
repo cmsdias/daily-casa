@@ -620,27 +620,46 @@ const server=http.createServer(async (req,res)=>{
       }
       if(req.method==='DELETE'){if(!elevated(user)&&item.createdBy!==user.id)return fail(res,403,'Sem permissão para eliminar.');if(!item.purchased)untrackShopping(item.title);db.shopping=db.shopping.filter(x=>x.id!==item.id);logAction(user,'shopping.delete',item.id);save();return send(res,200,{ok:true});}
     }
+    // 3.16: trabalho feito em conjunto — várias pessoas no mesmo registo. Guarda-se um registo por pessoa
+    // (cada uma com o seu tempo, para o equilíbrio), ligados pelo mesmo groupId.
+    const wlPeople=(raw)=>{if(!Array.isArray(raw))return null;const ids=[...new Set(raw.map(x=>String(x||'')).filter(Boolean))].slice(0,8);
+      if(!ids.length)return {error:'Escolhe quem fez o trabalho.'};
+      if(ids.some(i=>!db.people.some(q=>q.id===i&&isActive(q))))return {error:'Pessoa não encontrada.'};
+      if(!elevated(user)){if(roleOf(user)==='collaborator'&&(ids.length>1||ids[0]!==user.id))return {error:'Só podes registar o teu trabalho.'};if(!ids.includes(user.id))return {error:'Só podes registar trabalho em que participaste.'};}
+      return {ids};};
     if(p==='/api/worklogs'&&req.method==='POST'){
       let date;try{date=dateISO(cleanStr(b.date,10));}catch{return fail(res,400,'Data inválida.');}
       const minutes=Number(b.minutes);if(!Number.isInteger(minutes)||minutes<1||minutes>1440)return fail(res,400,'Duração inválida.');
       const note=cleanStr(b.note,1000);if(!note)return fail(res,400,'Descreve o trabalho realizado.');
       const task=b.taskId?db.tasks.find(t=>t.id===b.taskId):null;if(b.taskId&&(!task||!canSeeTask(user,task)))return fail(res,404,'Tarefa não encontrada.');
-      const userId=elevated(user)&&b.userId&&db.people.some(p=>p.id===b.userId)?b.userId:user.id;
-      const entry={id:id(),taskId:task?.id||null,userId,actor:user.id,date,minutes,note,createdAt:new Date().toISOString()};
-      db.workLogs.push(entry);logAction(user,'worklog.create',entry.id);save();return send(res,201,{entry});
+      let ids;if(Array.isArray(b.userIds)){const r=wlPeople(b.userIds);if(r.error)return fail(res,400,r.error);ids=r.ids;}
+      else ids=[elevated(user)&&b.userId&&db.people.some(p=>p.id===b.userId)?b.userId:user.id];
+      const groupId=ids.length>1?id():null;const at=new Date().toISOString();
+      const entries=ids.map(userId=>({id:id(),taskId:task?.id||null,userId,actor:user.id,date,minutes,note,createdAt:at,...(groupId?{groupId}:{})}));
+      db.workLogs.push(...entries);for(const x of entries)logAction(user,'worklog.create',x.id);save();return send(res,201,{entry:entries[0],entries});
     }
     // 3.11.4: corrigir ou apagar um registo de trabalho (quem o fez, quem o registou, ou administrador/gestor).
     {const wm=p.match(/^\/api\/worklogs\/([^/]+)$/);if(wm&&['PATCH','DELETE'].includes(req.method)){
       const e=db.workLogs.find(x=>x.id===wm[1]);if(!e)return fail(res,404,'Registo não encontrado.');
       if(!elevated(user)&&e.userId!==user.id&&e.actor!==user.id)return fail(res,403,'Só podes alterar os teus registos.');
-      if(req.method==='DELETE'){db.workLogs=db.workLogs.filter(x=>x.id!==e.id);logAction(user,'worklog.delete',e.id);save();return send(res,200,{ok:true});}
+      if(req.method==='DELETE'){const all=e.groupId&&url.searchParams.get('grupo')==='1';if(all&&!elevated(user)&&!db.workLogs.filter(x=>x.groupId===e.groupId).some(x=>x.userId===user.id||x.actor===user.id))return fail(res,403,'Só podes alterar os teus registos.');const gone=all?db.workLogs.filter(x=>x.groupId===e.groupId).map(x=>x.id):[e.id];db.workLogs=db.workLogs.filter(x=>!gone.includes(x.id));for(const g of gone)logAction(user,'worklog.delete',g);const rest=e.groupId?db.workLogs.filter(x=>x.groupId===e.groupId):[];if(rest.length===1)delete rest[0].groupId;save();return send(res,200,{ok:true});}
       const n={...e};
       if('date'in b){try{n.date=dateISO(cleanStr(b.date,10));}catch{return fail(res,400,'Data inválida.');}}
       if('minutes'in b){const m=Number(b.minutes);if(!Number.isInteger(m)||m<1||m>1440)return fail(res,400,'Duração inválida.');n.minutes=m;}
       if('note'in b){n.note=cleanStr(b.note,1000);if(!n.note)return fail(res,400,'Descreve o trabalho realizado.');}
       if('taskId'in b){const task=b.taskId?db.tasks.find(t=>t.id===b.taskId):null;if(b.taskId&&(!task||!canSeeTask(user,task)))return fail(res,404,'Tarefa não encontrada.');n.taskId=task?.id||null;}
       if('userId'in b&&elevated(user)&&b.userId&&db.people.some(q=>q.id===b.userId))n.userId=b.userId;
-      n.updatedAt=new Date().toISOString();Object.assign(e,n);logAction(user,'worklog.update',e.id);save();return send(res,200,{entry:e});}}
+      n.updatedAt=new Date().toISOString();
+      if(!Array.isArray(b.userIds)){Object.assign(e,n);logAction(user,'worklog.update',e.id);save();return send(res,200,{entry:e});}
+      // Grupo: os campos comuns aplicam-se a todos; acrescenta ou retira pessoas.
+      const r=wlPeople(b.userIds);if(r.error)return fail(res,400,r.error);
+      const group=e.groupId?db.workLogs.filter(x=>x.groupId===e.groupId):[e];
+      if(!elevated(user)&&!group.every(x=>x.userId===user.id||x.actor===user.id||r.ids.includes(user.id)))return fail(res,403,'Só podes alterar os teus registos.');
+      const gid=r.ids.length>1?(e.groupId||id()):null;const keep=[];
+      for(const x of group){if(r.ids.includes(x.userId)&&!keep.some(k=>k.userId===x.userId)){Object.assign(x,{date:n.date,minutes:n.minutes,note:n.note,taskId:n.taskId,updatedAt:n.updatedAt});if(gid)x.groupId=gid;else delete x.groupId;keep.push(x);logAction(user,'worklog.update',x.id);}
+        else{db.workLogs=db.workLogs.filter(y=>y.id!==x.id);logAction(user,'worklog.delete',x.id);}}
+      for(const uid of r.ids)if(!keep.some(k=>k.userId===uid)){const x={id:id(),taskId:n.taskId||null,userId:uid,actor:user.id,date:n.date,minutes:n.minutes,note:n.note,createdAt:n.updatedAt,...(gid?{groupId:gid}:{})};db.workLogs.push(x);keep.push(x);logAction(user,'worklog.create',x.id);}
+      save();return send(res,200,{entry:keep[0],entries:keep});}}
     const roleMatch=p.match(/^\/api\/people\/([^/]+)\/role$/);
     if(roleMatch&&req.method==='PATCH'){
       if(roleOf(user)!=='admin')return fail(res,403,'Apenas administradores podem alterar perfis.');
