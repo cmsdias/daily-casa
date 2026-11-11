@@ -118,11 +118,16 @@ function planDay(tasks,{userId,minutes,today}){
 
 /* ───────────── Equilíbrio da casa ───────────── */
 function weekRange(today){const w=(dow(today)+6)%7;const start=addDays(today,-w);return {start,end:addDays(start,6)};}
-function balance(tasks,history,people,{today,minutesDefault=15}={}){
+function balance(tasks,history,people,{today,minutesDefault=15,workLogs=[]}={}){
  const {start,end}=weekRange(today);const byId=new Map((tasks||[]).map(t=>[t.id,t]));const est=t=>t&&Number.isFinite(t.estimatedMinutes)&&t.estimatedMinutes>0?t.estimatedMinutes:minutesDefault;
  const rows=(people||[]).filter(p=>p.active!==false&&p.role!=='collaborator').map(p=>({id:p.id,name:p.name,done:0,planned:0,doneCount:0,plannedCount:0}));
  const row=id=>rows.find(r=>r.id===id);
- for(const h of history||[]){const day=String(h.at||'').slice(0,10);if(day<start||day>end)continue;const r=row(h.by);if(!r)continue;r.done+=est(byId.get(h.taskId));r.doneCount++;}
+ // 3.15.2: se quem concluiu registou o tempo dessa tarefa nesta semana, conta o tempo registado em vez da estimativa
+ // (um registo por conclusão; conclusões sem registo continuam a contar a estimativa).
+ const logged=new Map();for(const l of workLogs||[]){if(!l||!l.taskId)continue;const day=String(l.date||'').slice(0,10);if(day<start||day>end)continue;const k=l.userId+'|'+l.taskId;const g=logged.get(k)||{min:0,n:0};g.min+=Math.max(0,Number(l.minutes)||0);g.n++;logged.set(k,g);}
+ const done=new Map();
+ for(const h of history||[]){const day=String(h.at||'').slice(0,10);if(day<start||day>end)continue;const r=row(h.by);if(!r)continue;const k=h.by+'|'+h.taskId;done.set(k,(done.get(k)||0)+1);r.doneCount++;}
+ for(const [k,n] of done){const [by,taskId]=k.split('|');const r=row(by);const g=logged.get(k);const e=est(byId.get(taskId));r.done+=g?g.min+e*Math.max(0,n-g.n):e*n;}
  for(const t of tasks||[]){if(t.status==='done'||!t.assignedTo)continue;const r=row(t.assignedTo);if(!r)continue;if(!(t.dueDate?t.dueDate<=end:t.thisWeek))continue;r.planned+=est(t);r.plannedCount++;}
  rows.forEach(r=>r.total=r.done+r.planned);rows.sort((a,b)=>b.total-a.total);
  let suggestion=null;

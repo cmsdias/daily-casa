@@ -55,10 +55,10 @@ modalRenderers.plan=holder=>{
 
 /* ───────────── Equilíbrio da casa ───────────── */
 function balancePage(){
- const b=CasaCore.balance(tasks(),store.history,people(),{today:today()});const max=Math.max(60,...b.rows.map(r=>r.total));
+ const b=CasaCore.balance(tasks(),store.history,people(),{today:today(),workLogs:workLogs()});const max=Math.max(60,...b.rows.map(r=>r.total));
  const sug=b.suggestion&&canManage()?b.suggestion:null;
  const range=`${dateShortPT(b.start)} a ${dateShortPT(b.end)}`;
- return `${head('Equilíbrio da casa',`Semana de ${esc(range)}: tempo estimado das tarefas de cada pessoa.`,false)}
+ return `${head('Equilíbrio da casa',`Semana de ${esc(range)}: tempo das tarefas de cada pessoa (o registado, quando existe; senão, o estimado).`,false)}
  <div class="panel balance-panel"><div class="balance-legend"><span><i class="done"></i>Feito</span><span><i class="planned"></i>Por fazer esta semana</span></div>
  ${b.rows.length?b.rows.map(r=>`<div class="balance-row"><span class="balance-name">${avatarHtml(who(r.id)||{name:r.name},'mini')}${esc(shortName(who(r.id)||{name:r.name}))}</span><span class="balance-bar" role="img" aria-label="${esc(r.name)}: ${fmtMin(r.done)} feito, ${fmtMin(r.planned)} por fazer"><i class="done" style="width:${r.done/max*100}%"></i><i class="planned" style="width:${r.planned/max*100}%"></i></span><span class="balance-total"><b>${fmtMin(r.total)}</b><small>${r.doneCount} feitas · ${r.plannedCount} por fazer</small></span></div>`).join(''):'<p class="group-empty">Ainda não há pessoas com tarefas esta semana.</p>'}</div>
  ${sug?`<div class="suggest-card">${ico('scale')}<div><strong>Sugestão</strong><p>${esc(firstNameOf(sug.to))} tem menos trabalho esta semana. Passar «${esc(sug.title)}» (${fmtMin(sug.minutes)}) de ${esc(firstNameOf(sug.from))} para ${esc(firstNameOf(sug.to))}?</p></div><button type="button" class="button primary" data-action="balance-apply" data-id="${esc(sug.taskId)}" data-to="${esc(sug.to)}">Atribuir a ${esc(firstNameOf(sug.to))}</button></div>`:''}
