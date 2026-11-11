@@ -514,6 +514,7 @@ html[data-theme="dark"] .hd-tag.bad{background:#3a2522;color:#e08d84}
 html[data-theme="dark"] .hd-tag.warn{background:#352d1e;color:#e2c58f}
 html[data-theme="dark"] .hd-tag.ok{background:#1f3327;color:#7fc79b}
 html[data-theme="dark"] .hd-empty svg{color:#7fc79b}
+html[data-theme="dark"] .wl-avs .avatar+.avatar{box-shadow:0 0 0 2px var(--dk-surface)}
 html[data-theme="dark"] i.done,html[data-theme="dark"] .balance-bar i.done{background:#8fb39b}
 html[data-theme="dark"] .store-mode{background:var(--dk-page)}
 html[data-theme="dark"] .store-head{background:#0f1a14;border-bottom:1px solid var(--dk-line)}
