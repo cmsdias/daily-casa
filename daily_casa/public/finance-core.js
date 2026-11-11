@@ -11,6 +11,22 @@ const DEFAULT_TAX={ordem:28,deposito:28,poupanca:28};
 const ASSET_GROUPS=[{key:'ordem',label:'À ordem',types:['ordem'],color:'#E9E4D6'},{key:'poupanca',label:'Depósitos e poupança',types:['deposito','poupanca','ppr'],color:'#C9A568'},{key:'invest',label:'Investimentos',types:['acoes','investimentos','cripto'],color:'#6E8F7B'},{key:'imoveis',label:'Imóveis',types:['imovel'],color:'#8FA79A'},{key:'cofre',label:'Cofre e outros',types:['cofre','outro'],color:'#B9B2A2'},{key:'creditos',label:'Créditos',types:LIABILITY_TYPES,color:'#B5534A',liability:true}];
 const EXPENSE_CATEGORIES=['Obras','Mobiliário','Equipamentos','Jardim','Reparações','Decoração','Outros'];
 const FIXED_CATEGORIES=['Energia','Água','Gás','Comunicações','Seguros','Habitação','Impostos','Serviços','Outros'];
+// 3.17: subscrições — despesas fixas com ficha própria (plano, quem paga e usa, período experimental, histórico de preço).
+const SUB_GROUPS=['Música e vídeo','Casa inteligente','Armazenamento','Software','Jogos','Notícias e leitura','Desporto e saúde','Outras'];
+const isoDate=v=>/^\d{4}-\d{2}-\d{2}$/.test(String(v||''))&&!Number.isNaN(Date.parse(v))?String(v):null;
+function cleanSub(b,prev={}){const s={...prev};
+  if('plan'in b)s.plan=str(b.plan,60);
+  if('group'in b||!prev.group)s.group=SUB_GROUPS.includes(b.group)?b.group:(prev.group||'Outras');
+  if('payerId'in b)s.payerId=str(b.payerId,40)||null;
+  if('userIds'in b){if(!Array.isArray(b.userIds))throw err(400,'Pessoas inválidas.');s.userIds=[...new Set(b.userIds.map(x=>str(x,40)).filter(Boolean))].slice(0,12);}
+  if('payMethod'in b)s.payMethod=str(b.payMethod,40);
+  if('url'in b){const u=str(b.url,300);const httpOk=typeof process!=='undefined'&&process.env?.SITEICON_ALLOW_HTTP==='1';if(u&&!(httpOk?/^https?:\/\/[^\s/$.?#][^\s]*$/i:/^https:\/\/[^\s/$.?#][^\s]*$/i).test(u))throw err(400,'A ligação tem de começar por https://');s.url=u||'';}
+  if('trialEnd'in b)s.trialEnd=b.trialEnd?isoDate(b.trialEnd):null;
+  if('remindDays'in b||!('remindDays'in prev)){const d=b.remindDays==null?7:Number(b.remindDays);if(!Number.isInteger(d)||d<0||d>60)throw err(400,'Dias de aviso inválidos (0 a 60).');s.remindDays=d;}
+  if('startDate'in b)s.startDate=b.startDate?isoDate(b.startDate):null;
+  if('note'in b)s.note=str(b.note,500);
+  if(!Array.isArray(s.priceHistory))s.priceHistory=[];
+  return s;}
 const LEGACY_TYPE={bank:'ordem',cash:'cofre',other:'outro'};
 
 function err(status,msg){const e=new Error(msg);e.status=status;return e;}
@@ -125,6 +141,7 @@ function cleanRecurring(b,r={}){const out={...r};
   if('assetId'in b)out.assetId=b.assetId||null;
   if('months'in b){if(b.months==null)out.months=null;else{if(!Array.isArray(b.months)||b.months.some(m=>!Number.isInteger(m)||m<1||m>12))throw err(400,'Meses inválidos.');const ms=[...new Set(b.months)].sort((x,y)=>x-y);out.months=ms.length&&ms.length<12?ms:null;}}
   if('active'in b){if(typeof b.active!=='boolean')throw err(400,'Estado inválido.');out.active=b.active;}else if(!r.id)out.active=true;
+  if(b.sub&&typeof b.sub==='object'){out.sub=cleanSub(b.sub,r.sub||{});out.category='Subscrições';}
   return out;}
 
 // Rotas /api/finance/*: devolve os dados da resposta, ou undefined se a rota não existir.
@@ -146,11 +163,17 @@ function handle(fin,u,method,path,b,ctx){
     if(method==='PATCH'){if(a.ownerId!==u.id&&'scope'in b)throw err(403,'Só quem criou este item pode mudar a visibilidade.');Object.assign(a,cleanAsset(b,a));if('valueCents'in b)setValue(a,b.valueCents,today());return {asset:a};}
     if(method==='DELETE'){a.archived=true;a.updatedAt=now();return {ok:true};}}
   if(path==='/api/finance/recurring'&&method==='POST'){const r={id:newId(),...cleanRecurring(b),startMonth:today().slice(0,7),createdBy:u.id,createdAt:now()};if(r.assetId)optAsset(r.assetId);
+    // Período experimental: o primeiro lançamento é no fim do período.
+    if(r.sub?.trialEnd&&r.sub.trialEnd>today()){r.startMonth=r.sub.trialEnd.slice(0,7);r.dayOfMonth=Number(r.sub.trialEnd.slice(8));}
+    if(r.sub&&!r.sub.startDate)r.sub.startDate=today();
     // Começa no mês atual; se o dia já passou, o lançamento deste mês fica feito.
     fin.recurring.push(r);generateRecurring(fin,today(),newId);return {recurring:r};}
   m=path.match(/^\/api\/finance\/recurring\/([^/]+)$/);
   if(m){const r=fin.recurring.find(x=>x.id===m[1]);if(!r)throw err(404,'Despesa fixa não encontrada.');
-    if(method==='PATCH'){const wasActive=r.active!==false;Object.assign(r,cleanRecurring(b,r));if(r.assetId)optAsset(r.assetId);
+    if(method==='PATCH'){const wasActive=r.active!==false;const oldAmount=r.amountCents;Object.assign(r,cleanRecurring(b,r));
+      // Subscrição: histórico de preço e cancelamento.
+      if(r.sub){if('amountCents'in b&&r.amountCents!==oldAmount)r.sub.priceHistory=[...(r.sub.priceHistory||[]),{at:today(),from:oldAmount,to:r.amountCents}].slice(-20);
+        if('active'in b){if(b.active===false&&wasActive)r.sub.cancelledAt=today();if(b.active!==false)delete r.sub.cancelledAt;}}if(r.assetId)optAsset(r.assetId);
       // Ao retomar uma despesa em pausa, não lança os meses em que esteve parada.
       if(!wasActive&&r.active!==false)r.lastMonth=(()=>{const [y,mm]=today().split('-').map(Number);const d=Number(today().slice(8));return d>=Math.min(r.dayOfMonth,monthDays(y,mm))?today().slice(0,7):(mm===1?`${y-1}-12`:`${y}-${String(mm-1).padStart(2,'0')}`);})();
       return {recurring:r};}
@@ -164,6 +187,6 @@ function handle(fin,u,method,path,b,ctx){
   return undefined;
 }
 const monthlyEquivalent=r=>Math.round(r.amountCents*(recurringMonths(r)?recurringMonths(r).length:12)/12);
-const api={setValue,nextMaturity,projectAsset,currentValue,signedValue,isLiability,LIABILITY_TYPES,DEFAULT_TAX,recurringMonths,monthlyEquivalent,ASSET_TYPES,ASSET_GROUPS,EXPENSE_CATEGORIES,FIXED_CATEGORIES,migrate,generateRecurring,view,handle,canSeeAsset};
+const api={SUB_GROUPS,cleanSub,setValue,nextMaturity,projectAsset,currentValue,signedValue,isLiability,LIABILITY_TYPES,DEFAULT_TAX,recurringMonths,monthlyEquivalent,ASSET_TYPES,ASSET_GROUPS,EXPENSE_CATEGORIES,FIXED_CATEGORIES,migrate,generateRecurring,view,handle,canSeeAsset};
 if(typeof module!=='undefined'&&module.exports)module.exports=api;else root.CasaFinance=api;
 })(typeof window!=='undefined'?window:globalThis);

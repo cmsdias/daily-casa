@@ -1,3 +1,16 @@
+# 3.17.0 — Subscrições
+
+- Novo separador «Subscrições» nas Finanças, com o custo por mês e por ano. Nas subscrições anuais, o custo por mês conta a parte de cada mês.
+- Cada subscrição tem:
+  - plano, categoria, preço e periodicidade (mensal, trimestral, semestral ou anual), e a próxima renovação;
+  - quem paga, quem usa e como se paga (só um nome, como «Revolut»);
+  - uma ligação para gerir a conta, notas e o histórico de preço.
+- Período experimental: a primeira despesa só entra quando o período termina.
+- Avisos antes das renovações anuais e do fim do período experimental (7 dias antes, por omissão). Podem ser desligados em Perfil › Notificações › Subscrições.
+- Ícone: a app vai buscá-lo ao site do serviço (a partir da ligação «Gerir conta»), ou podes escolher uma imagem. O ícone fica guardado só nesta casa. Sem ícone, aparece a inicial do serviço com uma cor.
+- Marcar como cancelada: a subscrição deixa de ser lançada e de contar nos totais, mas fica na lista das canceladas.
+- Uma despesa fixa que é uma subscrição passa para o novo separador com o botão «Passar para subscrições».
+
 # 3.15.2 — Equilíbrio com o tempo registado
 
 - O equilíbrio da semana passa a usar o tempo registado no Registo de horas quando o registo está ligado à tarefa concluída. Sem registo, continua a contar a estimativa da tarefa.

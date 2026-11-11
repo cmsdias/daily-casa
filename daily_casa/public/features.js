@@ -365,7 +365,7 @@ function personEditModal(id){const p=people().find(x=>x.id===id);if(!p)return;pe
 /* ───────────── Notificações (sino) ───────────── */
 let notifOpen=false;
 const notifications=()=>Array.isArray(store.notifications)?store.notifications:[];
-const NOTIF_ICON={assigned:'list',rotation:'repeat',done:'check-square',birthday:'cake',due:'clock',season:'calendar',equipment:'tool'};
+const NOTIF_ICON={assigned:'list',rotation:'repeat',done:'check-square',birthday:'cake',due:'clock',season:'calendar',equipment:'tool',subscription:'wallet'};
 function relTime(iso){const d=(Date.now()-Date.parse(iso))/1000;if(d<60)return 'agora';if(d<3600)return `há ${Math.floor(d/60)} min`;if(d<86400)return `há ${Math.floor(d/3600)} h`;if(d<172800)return 'ontem';if(d<7*86400)return `há ${Math.floor(d/86400)} dias`;return new Date(iso).toLocaleDateString('pt-PT',{day:'numeric',month:'short'});}
 function bellButton(){const n=notifications().filter(x=>!x.read&&!x.cleared).length;return `<button type="button" class="icon-btn bell-btn ${notifOpen?'is-open':''}" data-action="notif-toggle" aria-haspopup="dialog" aria-expanded="${notifOpen}" aria-label="Notificações${n?`: ${n} por ler`:''}">${ico('bell')}${n?`<span class="bell-badge" aria-hidden="true">${n>9?'9+':n}</span>`:''}</button>`;}
 function notifItem(n){return `<button type="button" class="notif-item ${n.read?'':'unread'}" data-action="notif-open" data-id="${esc(n.id)}"><span class="notif-ico t-${esc(n.type)}" aria-hidden="true">${ico(NOTIF_ICON[n.type]||'info')}</span><span class="notif-text"><b>${esc(n.title)}</b>${n.body?`<small>${esc(n.body)}</small>`:''}<em>${esc(relTime(n.at))}</em></span>${n.read?'':'<i class="notif-dot" aria-label="Por ler"></i>'}</button>`;}
@@ -384,7 +384,7 @@ async function notifAction(name,el){
  if(name==='notif-clear'){try{const r=await api('/api/notifications/clear','POST',{});store.notifications=r.notifications||[];}catch(e){toast(e.message);}render();toast('Sino limpo. Continuam em «Ver todas» durante 30 dias.');return true;}
  if(name==='notif-all'){notifOpen=false;page='notifications';render();window.scrollTo(0,0);return true;}
  if(name==='notif-open'){const n=notifications().find(x=>x.id===el.dataset.id);if(!n)return true;if(!n.read)await notifRead([n.id]);notifOpen=false;const l=n.link||{};
-  if(l.page){page=l.page;taskView='list';normalizePage();query='';roomFilter='all';statusFilter='all';priorityFilter='all';personFilter=l.filter==='mine'?store.user.id:'all';tab='active';}
+  if(l.finTab&&typeof finTab!=='undefined')finTab=l.finTab;if(l.page){page=l.page;taskView='list';normalizePage();query='';roomFilter='all';statusFilter='all';priorityFilter='all';personFilter=l.filter==='mine'?store.user.id:'all';tab='active';}
   render();window.scrollTo(0,0);if(l.taskId&&tasks().some(t=>t.id===l.taskId))openTask(l.taskId);if(l.equipmentId)openEquipmentView(l.equipmentId);if(l.incidentId)openIncidentView(l.incidentId);return true;}
  return false;}
 document.addEventListener('keydown',e=>{if(e.key==='Escape'&&notifOpen){notifOpen=false;render();document.querySelector('.bell-btn')?.focus();}});

@@ -13,6 +13,7 @@ const {createIncidents}=require('./lib/incidents');
 const CORE=require('./public/house-core.js');
 const SEASONAL=require('./public/seasonal-defaults.js');
 const FIN=require('./public/finance-core.js');
+const SITEICON=require('./lib/siteicon');const siteIcon=SITEICON.createSiteIcon();
 const {createQuotes}=require('./lib/quotes');const QUOTES=createQuotes();
 const UNITS=require('./public/shopping-units.js');
 function cleanUnit(v){const u=cleanStr(v,20);if(!u)return '';if(!UNITS.KEYS.includes(u))throw Error('Unidade inválida.');return u;}
@@ -83,7 +84,7 @@ const MAILER=MAIL.createMailer({getOptions:()=>({...addonOptions(),...(process.e
 const RS=Number(process.env.RATE_SCALE||1);
 const RL={ip:createRateLimiter({perMin:600*RS,burst:300*RS}),read:createRateLimiter({perMin:240*RS,burst:120*RS}),write:createRateLimiter({perMin:90*RS,burst:45*RS}),heavy:createRateLimiter({perMin:20/60*RS,burst:10*RS})};
 // Pedidos «pesados»: enviam email ou push, recebem ficheiros ou mexem em cópias de segurança.
-const HEAVY_RE=/^\/api\/(people\/[^/]+\/access-email|invites(\/[^/]+\/resend)?|security\/mail-test|push\/test|ha\/test|import|backups(\/.*)?|(tasks|incidents)\/[^/]+\/photos|equipment\/[^/]+\/docs)$/;
+const HEAVY_RE=/^\/api\/(people\/[^/]+\/access-email|invites(\/[^/]+\/resend)?|security\/mail-test|push\/test|ha\/test|import|backups(\/.*)?|(tasks|incidents)\/[^/]+\/photos|equipment\/[^/]+\/docs|finance\/recurring\/[^/]+\/icon)$/;
 function rateCheck(req,p){
   const ip=NET.info(req).client;const tok=((req.headers.cookie||'').match(/(?:^|;\s*)casa_session=([^;]+)/)||[])[1];
   const who=tok?'s:'+crypto.createHash('sha256').update(tok).digest('base64url').slice(0,22):'ip:'+ip;
@@ -108,7 +109,7 @@ function publicUrl(){return db.settings?.publicUrl||db.settings?.publicUrlAuto||
 const {createWebPush}=require('./lib/webpush');
 const WEBPUSH=createWebPush({getDb:()=>db,save,newId:()=>id(),subject:()=>{const m=MAILER.status();return m.configured?'mailto:'+m.from:(publicUrl()||'mailto:daily-casa@localhost');},allowHttp:process.env.PUSH_ALLOW_HTTP==='1',onError:(...a)=>console.error(...a)});
 const URGENT_TYPES=new Set(['security','incident']);
-const NOTIF_TYPES=['assigned','rotation','done','due','approval','incident','equipment','birthday','season','weather'];
+const NOTIF_TYPES=['assigned','rotation','done','due','approval','incident','equipment','birthday','season','weather','subscription'];
 const wantsPush=(userId,type)=>type==='security'||db.people.find(x=>x.id===userId)?.notifPrefs?.[type]!==false;
 // 3.6 · Convites por email.
 const INV=require('./lib/invites');const INVITES=INV.createInvites({getDb:()=>db,save,newId:()=>id()});
@@ -478,6 +479,12 @@ const server=http.createServer(async (req,res)=>{
       // Lançar as despesas fixas em falta antes de responder; só grava se algo mudou (uma leitura não deve mudar a revisão,
       // senão todos os dispositivos recarregariam sempre que alguém abre as Finanças).
       let changed=req.method!=='GET';try{if(FIN.generateRecurring(db.finance,dateInTz(new Date()),id))changed=true;}catch(e){console.error('Despesas fixas:',e.message);}
+      // 3.17: ícone de uma subscrição — procurado no site do serviço, ou uma imagem escolhida pela pessoa.
+      const im=p.match(/^\/api\/finance\/recurring\/([^/]+)\/icon$/);
+      if(im){FIN.migrate(db.finance);const r=db.finance.recurring.find(x=>x.id===im[1]&&x.sub);if(!r)return fail(res,404,'Subscrição não encontrada.');
+        if(req.method==='DELETE'){delete r.sub.icon;save();return send(res,200,{finance:FIN.view(db.finance,user,dateInTz(new Date()))});}
+        if(req.method==='POST'){try{if(b.dataUrl)r.sub.icon=SITEICON.cleanDataUrl(b.dataUrl);else{if(!r.sub.url)return fail(res,400,'Indica primeiro a ligação do serviço.');r.sub.icon=await siteIcon.find(r.sub.url);}}catch(e){return fail(res,422,e.message||'Não foi possível obter o ícone.');}
+          r.sub.iconAt=new Date().toISOString();save();return send(res,200,{finance:FIN.view(db.finance,user,dateInTz(new Date()))});}}
       // 3.8: atualizar a cotação de um item agora.
       const qm=p.match(/^\/api\/finance\/assets\/([^/]+)\/quote$/);
       if(qm&&req.method==='POST'){FIN.migrate(db.finance);const a=db.finance.assets.find(x=>x.id===qm[1]&&!x.archived&&FIN.canSeeAsset(user,x));if(!a)return fail(res,404,'Item não encontrado.');if(!a.symbol)return fail(res,400,'Este item não tem símbolo.');await refreshQuote(a);save();if(a.quote?.error)return fail(res,502,a.quote.error);return send(res,200,{finance:FIN.view(db.finance,user,dateInTz(new Date()))});}
@@ -770,13 +777,26 @@ const FIN_addDays=(iso,n)=>new Date(Date.parse(iso+'T12:00:00Z')+n*86400000).toI
 const hhmmNow=()=>new Intl.DateTimeFormat('en-GB',{timeZone:HOUSE_TZ,hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date());
 async function refreshQuote(a){await QUOTES.refreshAsset(a,{setValue:FIN.setValue,today:dateInTz(new Date())});if(a.quote&&!a.quote.error)a.quote.slot=quoteSlot();}
 let quotesBusy=false;
+// 3.17: aviso antes de renovar (subscrições não mensais) e antes do fim do período experimental.
+function subsTick(){const t=dateInTz(new Date());let n=0;const days=(a,b)=>Math.round((Date.parse(b)-Date.parse(a))/86400000);
+  const nextCharge=r=>{const [y,m]=t.split('-').map(Number);const ms=Array.isArray(r.months)&&r.months.length?r.months:null;for(let i=0;i<25;i++){const yy=y+Math.floor((m-1+i)/12),mm=(m-1+i)%12+1;if(ms&&!ms.includes(mm))continue;const d=`${yy}-${String(mm).padStart(2,'0')}-${String(Math.min(r.dayOfMonth,new Date(yy,mm,0).getDate())).padStart(2,'0')}`;if(d>=t)return d;}return null;};
+  for(const r of db.finance?.recurring||[]){if(!r.sub||r.active===false)continue;const rd=r.sub.remindDays??7;if(!rd)continue;
+    const trial=r.sub.trialEnd&&r.sub.trialEnd>=t;const monthly=!(Array.isArray(r.months)&&r.months.length);if(!trial&&monthly)continue;
+    const when=trial?r.sub.trialEnd:nextCharge(r);if(!when)continue;const left=days(t,when);if(left<0||left>rd||r.sub.remindedFor===when)continue;
+    const eurs=(r.amountCents/100).toLocaleString('pt-PT',{minimumFractionDigits:2,maximumFractionDigits:2})+' €';const dd=new Date(when+'T12:00:00Z').toLocaleDateString('pt-PT',{day:'numeric',month:'long',timeZone:'UTC'});
+    const title=trial?`${r.name}: o período experimental termina ${left===0?'hoje':left===1?'amanhã':'a '+dd}`:`${r.name} renova ${left===0?'hoje':left===1?'amanhã':'a '+dd}`;
+    const body=trial?`Depois passa a ${eurs}. Se não queres continuar, cancela antes.`:`Pagamento de ${eurs}. Se já não precisas, cancela antes.`;
+    for(const q of db.people)if(isActive(q)&&financeAllowed(q))notif.add(q.id,'subscription',title,body,{page:'finance',finTab:'subs'});
+    r.sub.remindedFor=when;n++;}
+  if(n)save();}
 async function quotesTick(){if(quotesBusy||process.env.QUOTES_OFF==='1')return;quotesBusy=true;try{const slot=quoteSlot();let n=0;
   for(const a of (db.finance?.assets||[])){if(a.archived||!a.symbol||!(a.shares>0))continue;const q=a.quote;
    const due=!q||q.slot!==slot;const retryOk=!q?.error||Date.now()-Date.parse(q.checkedAt||0)>3600_000;
    if(due&&retryOk){await refreshQuote(a);n++;}}
   if(n)save();}catch(e){console.error('Cotações:',e.message);}finally{quotesBusy=false;}}
 function dailyHour(){if(process.env.DAILY_ANY_HOUR==='1')return true;const now=new Intl.DateTimeFormat('en-GB',{timeZone:process.env.TZ||'Europe/Lisbon',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date());return now>=(db.ha?.dailyTime||'08:30');}
-setInterval(()=>{try{backups.autoTick();}catch(e){console.error('Cópia automática falhou:',e.message);}try{if(FIN.generateRecurring(db.finance,dateInTz(new Date()),id))save();}catch(e){console.error('Despesas fixas:',e.message);}try{if(dailyHour())notif.daily();}catch(e){console.error('Notificações diárias:',e.message);}try{equip.tick();}catch(e){console.error('Equipamentos:',e.message);}quotesTick();},30*60_000).unref();
+setInterval(()=>{try{backups.autoTick();}catch(e){console.error('Cópia automática falhou:',e.message);}try{if(FIN.generateRecurring(db.finance,dateInTz(new Date()),id))save();}catch(e){console.error('Despesas fixas:',e.message);}try{if(dailyHour())notif.daily();}catch(e){console.error('Notificações diárias:',e.message);}try{equip.tick();}catch(e){console.error('Equipamentos:',e.message);}try{subsTick();}catch(e){console.error('Subscrições:',e.message);}quotesTick();},30*60_000).unref();
+setTimeout(()=>{try{subsTick();}catch(e){console.error('Subscrições:',e.message);}},Number(process.env.SUBS_TICK_DELAY||25_000)).unref();
 setTimeout(quotesTick,20_000).unref();
 try{equip.tick();}catch(e){console.error('Equipamentos:',e.message);}
 try{if(dailyHour())notif.daily();}catch(e){console.error('Notificações diárias:',e.message);}
