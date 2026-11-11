@@ -1,3 +1,13 @@
+# 3.18.0 — Pesquisa geral
+
+- Nova lupa no topo, ao lado do sino, para procurar na app toda. Procura em tarefas e rotinas, compras, ocorrências, equipamentos, pessoas e registos de horas. Quem tem acesso às finanças também procura nas despesas, nas despesas fixas, nas subscrições e no património.
+- Também encontra páginas e ações: escrever «notif» leva às notificações, «nova tarefa» abre o formulário.
+- Ignora acentos e maiúsculas («agua» encontra «Água»). Os resultados aparecem agrupados por área, e tocar num resultado abre o próprio item.
+- Os filtros por cima dos resultados limitam a pesquisa a uma área.
+- Sem nada escrito, aparecem as pesquisas recentes feitas neste dispositivo.
+- No computador, a pesquisa abre com «/» ou Ctrl+K (⌘+K no Mac). As setas escolhem o resultado, Enter abre e Esc fecha.
+- Só aparece o que cada pessoa já pode ver.
+
 # 3.17.0 — Subscrições
 
 - Novo separador «Subscrições» nas Finanças, com o custo por mês e por ano. Nas subscrições anuais, o custo por mês conta a parte de cada mês.
