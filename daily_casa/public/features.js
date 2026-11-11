@@ -504,7 +504,8 @@ modalRenderers['worklog-new']=holder=>{const preset=modal.taskId||'';
  ${wlWhoField([store.user.id],'wn')}
  <div class="field"><label for="wn-task">Tarefa relacionada</label><select id="wn-task" name="taskId">${option('','Sem tarefa associada',preset)}${tasks().map(t=>option(t.id,t.title,preset)).join('')}</select></div>
  <div class="modal-actions"><span class="spacer"></span><button type="button" class="button" data-action="close">Cancelar</button><button type="submit" class="button primary">${ico('check')} Guardar</button></div></form>`;
- holder.innerHTML=modalShell({title:'Registar trabalho',sub:'O que foi feito e quanto tempo levou.',body});
+ const dupe=preset?workLogs().filter(l=>l.taskId===preset&&l.date===today()&&(l.userId===store.user.id||l.actor===store.user.id)):[];
+ holder.innerHTML=modalShell({title:'Registar trabalho',sub:'O que foi feito e quanto tempo levou.',body:(dupe.length?`<p class="wl-dupe">${ico('alert')} Já registaste ${esc(fmtDur(dupe.reduce((n,l)=>n+Number(l.minutes||0),0)))} nesta tarefa hoje. Só regista outra vez se for trabalho a mais.</p>`:'')+body});
  const f=holder.querySelector('#worklog-form-new');setTimeout(()=>{const n=f.querySelector('#wn-note');n.focus();n.setSelectionRange(n.value.length,n.value.length);},60);
  f.addEventListener('submit',async ev=>{ev.preventDefault();const v=Object.fromEntries(new FormData(f));delete v.userIds;v.minutes=Number(v.minutes);if(f.querySelector('[data-wl-who]')){v.userIds=wlPicked(f);if(!v.userIds.length){toast('Escolhe quem fez o trabalho.');return;}}const b=f.querySelector('[type=submit]');b.disabled=true;
   try{await api('/api/worklogs','POST',v);modal=null;await reload();toast(v.userIds?.length>1?`Trabalho registado para ${v.userIds.length} pessoas.`:'Trabalho registado.');}catch(err){toast(err.message);b.disabled=false;}});};
