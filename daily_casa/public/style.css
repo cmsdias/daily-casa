@@ -2304,3 +2304,5 @@ html.srch-lock,html.srch-lock body{overflow:hidden}
 .srch-hint,.srch-empty{margin:6px 4px 10px;font-size:14px;color:#657364;line-height:1.5}
 .srch-field input,.srch-field input:focus,.srch-field input:focus-visible{border:0!important;box-shadow:none!important;outline:none!important;border-radius:0!important;background:transparent!important;min-height:0!important;height:auto!important;padding:12px 0!important;margin:0!important;width:auto}
 .srch-field:focus-within{box-shadow:0 0 0 3px #c9a15f33}
+.wl-dupe{display:flex;gap:8px;align-items:flex-start;margin:0 0 12px;padding:10px 12px;border-radius:12px;background:#f6eedc;color:#6d5223;font-size:13.5px}
+.wl-dupe svg{width:17px;height:17px;flex:none;margin-top:2px}

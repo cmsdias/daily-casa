@@ -1,3 +1,10 @@
+# 3.18.1 — Anular sem duplicados
+
+- «Anular» depois de concluir uma tarefa retira o tempo registado para essa tarefa depois da conclusão. Assim, ao concluir outra vez e registar o tempo, não fica em duplicado.
+- Reabrir uma tarefa concluída há menos de 24 horas retira essa conclusão do equilíbrio da semana.
+- Ao registar tempo numa tarefa que já tem tempo teu registado hoje, aparece um aviso.
+- Quem concluiu uma tarefa pode usar «Anular», mesmo sem permissão para editar a tarefa.
+
 # 3.18.0 — Pesquisa geral
 
 - Nova lupa no topo, ao lado do sino, para procurar na app toda. Procura em tarefas e rotinas, compras, ocorrências, equipamentos, pessoas e registos de horas. Quem tem acesso às finanças também procura nas despesas, nas despesas fixas, nas subscrições e no património.
