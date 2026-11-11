@@ -67,13 +67,37 @@ function createWeather({ getDb, save, haCall = null, haAvailable = () => false, 
     const home = await haHome();
     return { source: 'ha', locationName: home?.name || st?.attributes?.friendly_name || 'Casa', now: Number.isFinite(st?.attributes?.temperature) ? { temp: Math.round(st.attributes.temperature), at: st.last_updated || new Date().toISOString(), station: '', type: HA_TYPES[st.state] ?? 0, desc: TYPES[HA_TYPES[st.state] ?? 0] } : null, days, warnings: [] };
   }
+  // 3.16: um aviso só é notificado uma vez por episódio. O IPMA publica o mesmo aviso em vários blocos
+  // seguidos (e volta a publicá-lo a cada atualização, com outras horas). O assunto é o tipo, o nível e o texto;
+  // enquanto houver blocos seguidos ou sobrepostos do mesmo assunto, não se notifica de novo.
+  // Nível mais alto ou texto diferente contam como assunto novo. Um episódio fecha 12 h depois do último bloco.
+  const GAP = 12 * 3600_000;
+  const subject = x => [x.type, x.level, String(x.text || '').replace(/\s+/g, ' ').trim().toLowerCase()].join('|');
+  function alertWarnings(w, warnings, enabled) {
+    const now = Date.now(); const seen = w.alerted;
+    // Formato antigo (por bloco, com hora de início): migra sem voltar a notificar o que já está em curso.
+    const migrate = w.alertVersion !== 2 && Object.values(seen).some(v => typeof v !== 'object');
+    if (w.alertVersion !== 2) { for (const k of Object.keys(seen)) if (typeof seen[k] !== 'object') delete seen[k]; w.alertVersion = 2; }
+    const groups = new Map();
+    for (const x of warnings) { const k = subject(x); const g = groups.get(k); const end = Date.parse(x.end) || now; const start = Date.parse(x.start) || now;
+      if (g) { g.end = Math.max(g.end, end); g.start = Math.min(g.start, start); } else groups.set(k, { x, start, end }); }
+    for (const [k, g] of groups) {
+      const prev = seen[k];
+      const same = prev && g.start <= (prev.end || 0) + GAP;
+      if (same) { prev.end = Math.max(prev.end || 0, g.end); continue; }
+      seen[k] = { at: now, end: g.end };
+      if (!enabled || migrate) continue;
+      const until = new Date(g.end).toLocaleString('pt-PT', { weekday: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Lisbon' });
+      notifyAll(`Aviso ${({ yellow: 'amarelo', orange: 'laranja', red: 'vermelho' })[g.x.level] || ''}: ${g.x.type}`.trim(), `${g.x.text ? g.x.text.replace(/\.?\s*$/, '. ') : ''}Até ${until}.`);
+    }
+    for (const [k, v] of Object.entries(seen)) if (typeof v !== 'object' || now - (v.end || v.at || 0) > 2 * 86400_000) delete seen[k];
+  }
   async function refresh() {
     const w = state(); const s = w.settings;
     try {
       const d = s.source === 'ha' ? await fromHa(s) : await fromIpma(s);
       w.data = { ...d, fetchedAt: new Date().toISOString() }; delete w.error;
-      if (s.alerts) for (const x of d.warnings) { const key = `${x.type}|${x.level}|${x.start}`; if (w.alerted[key]) continue; w.alerted[key] = Date.now(); notifyAll(`Aviso ${({ yellow: 'amarelo', orange: 'laranja', red: 'vermelho' })[x.level] || ''}: ${x.type}`.trim(), x.text || `Até ${new Date(x.end).toLocaleString('pt-PT', { weekday: 'long', hour: '2-digit', minute: '2-digit', timeZone: 'Europe/Lisbon' })}.`); }
-      for (const [k, t] of Object.entries(w.alerted)) if (Date.now() - t > 7 * 86400_000) delete w.alerted[k];
+      alertWarnings(w, d.warnings, s.alerts);
     } catch (e) { w.error = e.message; w.errorAt = new Date().toISOString(); log('Meteorologia:', e.message); }
     save();
   }
@@ -96,6 +120,6 @@ function createWeather({ getDb, save, haCall = null, haAvailable = () => false, 
     if ('tips' in b) s.tips = !!b.tips; if ('alerts' in b) s.alerts = !!b.alerts;
     save(); await tick(true); return view(true);
   }
-  return { tick, view, update, locations, TYPES };
+  return { tick, view, update, locations, refresh, TYPES };
 }
 module.exports = { createWeather, TYPES };
