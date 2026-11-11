@@ -1,3 +1,9 @@
+# 3.15.2 — Equilíbrio com o tempo registado
+
+- O equilíbrio da semana passa a usar o tempo registado no Registo de horas quando o registo está ligado à tarefa concluída. Sem registo, continua a contar a estimativa da tarefa.
+- Corrigir ou apagar um registo atualiza logo o equilíbrio, no Hoje, na página Equilíbrio da casa e no painel.
+- Numa rotina feita várias vezes na semana, cada conclusão sem registo conta a estimativa.
+
 # 3.15.1 — Avisos do IPMA sem repetições
 
 - Cada aviso do IPMA é notificado uma só vez enquanto durar. O IPMA publica o mesmo aviso em vários blocos seguidos e volta a publicá-lo a cada atualização; agora isso conta como um só aviso.
