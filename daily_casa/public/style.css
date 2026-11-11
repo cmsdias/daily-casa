@@ -2215,3 +2215,55 @@ button.wl-row:focus-visible{outline:2px solid var(--brand-gold);outline-offset:2
 .wl-who .day-chip-check.locked span{cursor:default}
 .wl-avs{display:inline-flex;flex:none}
 .wl-avs .avatar+.avatar{margin-left:-10px;box-shadow:0 0 0 2px #fff}
+
+/* ───────── 3.17 — Subscrições ───────── */
+.sub-hero{background:var(--brand-green);color:var(--brand-paper);border-radius:20px;padding:16px;display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:0 0 14px}
+.sub-hero small{display:block;font-size:11px;letter-spacing:.08em;text-transform:uppercase;opacity:.72}
+.sub-hero b{font-size:24px;letter-spacing:-.03em;font-variant-numeric:tabular-nums}
+.sub-hero p{grid-column:1/-1;margin:0;font-size:13px;opacity:.82}
+.sub-alert{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;border:0;font:inherit;cursor:pointer;background:#f6eedc;color:#6d5223;border-radius:14px;padding:11px 13px;margin:0 0 10px;font-size:13.5px}
+.sub-alert svg{width:18px;height:18px;flex:none;margin-top:1px}
+.sub-group{margin:0 0 14px}
+.sub-group-head{display:flex;justify-content:space-between;gap:10px;margin:0 4px 6px;font-size:11.5px;font-weight:750;letter-spacing:.1em;text-transform:uppercase;color:#657364;font-variant-numeric:tabular-nums}
+details.sub-group>summary{cursor:pointer;list-style:none}
+details.sub-group>summary::-webkit-details-marker{display:none}
+.sub-list{padding:2px 14px}
+.sub-row{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:12px;align-items:center;width:100%;min-height:58px;padding:10px 0;border:0;border-top:1px solid #ecece9;background:none;font:inherit;color:inherit;text-align:left;cursor:pointer}
+.sub-row:first-child{border-top:0}
+.sub-row:focus-visible{outline:2px solid var(--brand-gold);outline-offset:2px;border-radius:8px}
+.sub-ico{width:40px;height:40px;border-radius:11px;display:grid;place-items:center;overflow:hidden;flex:none;background:#fff;border:1px solid #e3e7e1}
+.sub-ico img{width:100%;height:100%;object-fit:contain}
+.sub-ico.mono{border:0;color:#fff;font-weight:700;font-size:16px}
+.sub-ico.big{width:52px;height:52px;border-radius:14px;font-size:20px}
+.sub-text{min-width:0;display:flex;flex-direction:column;gap:1px}
+.sub-text strong{font-size:14.5px;font-weight:650;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sub-text small{font-size:13px;color:#657364;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.sub-price{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.sub-price b{display:block;font-size:14.5px}
+.sub-price small{font-size:12px;color:#657364}
+.sub-tag{display:inline-block;margin-left:6px;border-radius:6px;padding:1px 6px;font-size:11px;font-weight:650;vertical-align:1px}
+.sub-tag.info{background:#e4eef1;color:#2f4f60}
+.sub-tag.warn{background:#f6eedc;color:#7d6029}
+.sub-row.off .sub-ico{filter:grayscale(1);opacity:.55}
+.sub-row.off strong,.sub-row.off .sub-price b{color:#8a938d}
+.sub-cta{display:flex;justify-content:flex-end;margin:6px 0 10px}
+@media (max-width:650px){.sub-cta .button{flex:1}}
+.sub-sheet{display:flex;flex-direction:column;gap:12px}
+.sub-sheet-head{display:flex;gap:12px;align-items:center}
+.sub-sheet-head h3{margin:0;font-size:20px;letter-spacing:-.02em}
+.sub-sheet-head p{margin:0;font-size:13px;color:#657364}
+.sub-kv{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sub-kv>div{background:#f6f8f4;border:1px solid #e3e7e1;border-radius:13px;padding:9px 11px}
+.sub-kv span{display:block;font-size:12.5px;color:#657364}
+.sub-kv b{font-size:14.5px;font-variant-numeric:tabular-nums}
+.sub-rows{padding:2px 14px}
+.sub-kvrow{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:10px 0;border-top:1px solid #ecece9;font-size:14px}
+.sub-kvrow:first-child{border-top:0}
+.sub-kvrow>span:first-child{color:#657364}
+.sub-kvrow b{font-weight:600;text-align:right}
+.sub-kvrow a{color:#7a5a22;font-weight:650;text-decoration:none}
+.sub-note b{font-weight:500}
+.sub-avs{display:flex;gap:4px}
+.sub-icon-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.sub-icon-btns{display:flex;gap:6px;flex-wrap:wrap}
+.sub-upload{cursor:pointer}

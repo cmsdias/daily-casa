@@ -348,7 +348,8 @@ function notifTypesField(){
   ['incident','alert','Ocorrências',mgr?'Novas ocorrências e as tuas quando são resolvidas':'Quando uma ocorrência que reportaste é resolvida',true],
   ['equipment','tool','Equipamentos','Revisões marcadas e garantias a terminar',mgr],
   ['birthday','cake','Aniversários','No dia e na véspera',!collab],
-  ['season','calendar','Calendário da casa','No início do mês, os trabalhos da época',mgr]].filter(r=>r[4]);
+  ['season','calendar','Calendário da casa','No início do mês, os trabalhos da época',mgr],
+  ['subscription','wallet','Subscrições','Antes das renovações anuais e do fim dos períodos experimentais',mgr]].filter(r=>r[4]);
  return `<div class="notif-types"><h3 class="notif-types-title">Sobre o que te avisamos</h3>${rows.map(([k,icon,t,d])=>{const on=prefs[k]!==false;return `<div class="pref-row notif-type-row"><span class="notif-type-ico" aria-hidden="true">${ico(icon)}</span><div><span class="field-label" id="np-${k}">${t}</span><small class="appearance-state">${d}</small></div><button type="button" class="switch" role="switch" aria-checked="${on}" aria-labelledby="np-${k}" data-action="notif-pref" data-type="${k}" ${demo?'':''}><span></span></button></div>`;}).join('')}<p class="field-help">Os avisos de segurança e os códigos de recuperação são sempre enviados. No sino continuas a ver tudo.</p></div>`;
 }
 actionHandlers.push(async(name,el)=>{

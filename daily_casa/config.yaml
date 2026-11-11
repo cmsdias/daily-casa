@@ -1,7 +1,7 @@
 name: "Daily Casa"
 slug: "daily_casa"
 description: "Tarefas e rotinas domésticas partilhadas"
-version: "3.16.0"
+version: "3.17.0"
 arch:
   - aarch64
   - amd64
