@@ -1,3 +1,9 @@
+# 3.15.1 — Avisos do IPMA sem repetições
+
+- Cada aviso do IPMA é notificado uma só vez enquanto durar. O IPMA publica o mesmo aviso em vários blocos seguidos e volta a publicá-lo a cada atualização; agora isso conta como um só aviso.
+- A notificação indica até quando dura o aviso, contando todos os blocos seguidos.
+- Volta a haver notificação se o nível subir (por exemplo, de amarelo para laranja), se o texto do aviso mudar, ou se o mesmo aviso regressar mais de 12 horas depois de ter terminado.
+
 # 3.15.0 — Painel da casa
 
 - No computador e no tablet, «Casa» passa a ser um painel com o estado de cada área: ocorrências por resolver, finanças do mês, revisões e garantias dos próximos 60 dias, equilíbrio da semana, registo de horas e pessoas.
