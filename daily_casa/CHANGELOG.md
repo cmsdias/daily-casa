@@ -1,3 +1,19 @@
+# 3.19.0 — Abrir já, responder já, sentir o toque
+
+- A app abre logo com os últimos dados guardados no telemóvel e atualiza-os em segundo plano, com uma barra fina no topo. Com rede fraca, já não fica à espera no ecrã de abertura.
+- Concluir tarefas, marcar subtarefas, adicionar ou marcar compras e registar horas aparecem feitos no instante. O envio ao servidor segue em segundo plano. Se falhar, a alteração é desfeita e aparece um aviso.
+- Sem rede, estas ações ficam guardadas e são enviadas quando a ligação voltar. No Android são enviadas mesmo com a app fechada; no iPhone, quando a app volta a abrir. A faixa «Sem ligação» diz de quando são os dados.
+- Sem duplicados: cada ação tem um identificador único, por isso uma ação que chegue duas vezes ao servidor conta uma só vez.
+- Os dados guardados no telemóvel não incluem as finanças. São apagados ao terminar sessão, ao mudar de pessoa ou quando a sessão expira.
+- Vibração ao concluir uma tarefa, marcar uma compra, mudar de vista e confirmar. No Android há padrões diferentes para o dia completo, para os avisos e para os erros. No iPhone é sempre um toque simples. Desliga-se em Definições › Aparência, só para o dispositivo onde mudares.
+- Deslizar nas linhas, no telemóvel:
+  - Tarefas: para a direita conclui; para a esquerda adia para amanhã.
+  - Compras: para a direita marca como comprado; para a esquerda abre a edição.
+- No telemóvel, as janelas fecham a puxar para baixo pelo topo.
+- As listas reorganizam-se a deslizar. As páginas entram pela direção certa (Hoje → Tarefas → Compras → Casa). Os totais contam até ao valor.
+- Quando o dia fica completo, o anel do dia brilha. O sino abana quando chega uma notificação nova. As opções do «+» entram uma a uma.
+- Com «reduzir movimento» ativo no sistema, as animações ficam desligadas.
+
 # 3.18.1 — Anular sem duplicados
 
 - «Anular» depois de concluir uma tarefa retira o tempo registado para essa tarefa depois da conclusão. Assim, ao concluir outra vez e registar o tempo, não fica em duplicado.
