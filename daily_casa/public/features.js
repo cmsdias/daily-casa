@@ -33,8 +33,8 @@ function busyStart(){const b=lastTrigger;if(!b||!b.isConnected||performance.now(
 function busyEnd(b){if(!b)return;b._busy=Math.max(0,(b._busy||1)-1);if(b._busy)return;clearTimeout(b._busyTimer);const st=b._busyState;if(!st)return;b._busyState=null;b.classList.remove('is-busy');b.removeAttribute('aria-busy');b.disabled=st.dis;b.innerHTML=st.html;b.style.width=st.w;}
 const apiCore=api;
 // eslint-disable-next-line no-global-assign
-api=async function(endpoint,method='GET',data){const write=method!=='GET';const b=write?busyStart():null;if(!write)loadStart();
- try{if(demo&&write)await new Promise(r=>setTimeout(r,450));return await apiCore(endpoint,method,data);}finally{if(write)busyEnd(b);else loadEnd();}};
+api=async function(endpoint,method='GET',data,extra){const write=method!=='GET';const b=write?busyStart():null;if(!write)loadStart();
+ try{if(demo&&write)await new Promise(r=>setTimeout(r,450));return await apiCore(endpoint,method,data,extra);}finally{if(write)busyEnd(b);else loadEnd();}};
 const skeletonLines=(n=3)=>`<div class="sk-group" aria-hidden="true">${Array.from({length:n},(_,i)=>`<div class="sk sk-line" style="width:${[92,74,83,66][i%4]}%"></div>`).join('')}</div>`;
 
 // Daily Casa 1.7 — funcionalidades acrescentadas ao núcleo (app.js):
@@ -50,7 +50,7 @@ function syncBanner(show){let el=document.getElementById('sync-banner');if(!show
 async function syncApply(){const y=window.scrollY;syncPending=false;syncBanner(false);await load();render();window.scrollTo(0,y);}
 async function syncCheck(){
  if(demo||!store.user||document.hidden)return;
- let j;try{const r=await fetch('api/rev',{credentials:'same-origin',headers:{Accept:'application/json'},cache:'no-store'});if(r.status===401){store.user=null;renderAuth('login','A sessão terminou. Volta a entrar.');return;}if(!r.ok)return;j=await r.json();if(offline){offline=false;render();}}catch{return;}
+ let j;try{const r=await fetch('api/rev',{credentials:'same-origin',headers:{Accept:'application/json'},cache:'no-store'});if(r.status===401){store.user=null;offlineClear();renderAuth('login','A sessão terminou. Volta a entrar.');return;}if(!r.ok)return;j=await r.json();if(offline){offline=false;render();}}catch{return;}
  if(j.version)versionCheck(j.version);
  if(!syncRev){syncRev=j.rev;return;}
  if(j.rev===syncRev){if(syncPending&&!syncBusy())syncApply().catch(()=>{});return;}
@@ -495,7 +495,7 @@ function worklogsPage(){
  const total=logs.reduce((n,x)=>n+Number(x.minutes||0),0);const ppl=new Set(logs.map(x=>x.userId)).size;
  const merged=wlMerge(logs);const days=[];for(const x of merged){const last=days[days.length-1];if(last&&last.date===x.date)last.items.push(x);else days.push({date:x.date,items:[x]});}
  const seg=`<div class="seg-control seg-small wl-period" role="radiogroup" aria-label="Período">${WL_PERIODS.map(([k,l])=>`<button type="button" role="radio" aria-checked="${worklogPeriod===k}" data-action="worklog-period" data-period="${k}">${l}</button>`).join('')}</div>`;
- const stats=`<div class="wl-stats"><div><strong>${esc(fmtDur(total))}</strong><span>registadas</span></div><div><strong>${merged.length}</strong><span>${merged.length===1?'registo':'registos'}</span></div><div><strong>${ppl}</strong><span>${ppl===1?'pessoa':'pessoas'}</span></div></div>`;
+ const stats=`<div class="wl-stats"><div><strong data-count="${total}" data-fmt="min">${esc(fmtDur(total))}</strong><span>registadas</span></div><div><strong>${merged.length}</strong><span>${merged.length===1?'registo':'registos'}</span></div><div><strong>${ppl}</strong><span>${ppl===1?'pessoa':'pessoas'}</span></div></div>`;
  const list=days.length?days.map(d=>`<section class="wl-day"><h2 class="wl-day-head"><span>${esc(worklogDayLabel(d.date))}</span><span>${esc(fmtDur(d.items.reduce((n,x)=>n+x.members.reduce((m,y)=>m+Number(y.minutes||0),0),0)))}</span></h2><div class="panel wl-list">${d.items.map(worklogRow).join('')}</div></section>`).join(''):`<div class="panel">${empty('clock','Sem registos neste período','Toca em «Registar trabalho» para anotar o que foi feito e quanto tempo levou.')}</div>`;
  return `${head('Registo de horas','Trabalhos feitos, datas e tempo de cada pessoa.',false)}${seg}${stats}${list}${hoursSummary()}<div class="wl-cta"><button type="button" class="button primary" data-action="worklog-new">${ico('plus-square')} Registar trabalho</button></div>`;}
 modalRenderers['worklog-new']=holder=>{const preset=modal.taskId||'';

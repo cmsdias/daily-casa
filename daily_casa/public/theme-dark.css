@@ -451,6 +451,13 @@ html[data-theme="dark"] .srch-text mark{background:#453a21}
 html[data-theme="dark"] .srch-badge{background:#242e28;color:#d3918b}
 html[data-theme="dark"] .srch-hint,html[data-theme="dark"] .srch-empty{color:#adb7ad}
 html[data-theme="dark"] .wl-dupe{background:#453a21;color:#ddccae}
+html[data-theme="dark"] .haptics-field small{color:#adb7ad}
+html[data-theme="dark"] .task-row.swiping,html[data-theme="dark"] .shopping-line.swiping{background:#1c2520}
+html[data-theme="dark"] .swipe-under.sw-right{background-color:#2a352e}
+html[data-theme="dark"] .swipe-under.is-task.sw-left{background-color:#453a21}
+html[data-theme="dark"] .swipe-under.is-shop.sw-left{background-color:#28332c}
+html[data-theme="dark"] .swipe-under.is-shop.sw-left.sw-ready{background-color:#2d3a32}
+@media (max-width:650px) and (pointer:coarse){html[data-theme="dark"] .modal .modal-head::before{background:#2d3932}}
 html[data-theme="dark"] .dp-day.sel{background:#C9A568;color:#17261E}
 @media (max-width:650px){html[data-theme="dark"] .mobile-nav.tab-nav{background:var(--dk-surface);border:1px solid #2C3A32;box-shadow:0 14px 30px -12px rgba(0,0,0,.7)}html[data-theme="dark"] .mobile-nav.tab-nav>.tab-item{color:#A3AFA7}html[data-theme="dark"] .mobile-nav.tab-nav>.tab-item.active{background:#2E3B34;color:#E7ECE8}}
 html[data-theme="dark"] .dp-day.out{color:#58665E}
@@ -566,6 +573,12 @@ html[data-theme="dark"] .srch-ico{background:#26302a;color:#7fc79b}
 html[data-theme="dark"] .srch-text mark{background:#4a3d22}
 html[data-theme="dark"] .srch-badge{background:#3a2522;color:#e08d84}
 html[data-theme="dark"] .wl-dupe{background:#352d1e;color:#e2c58f}
+html[data-theme="dark"] .haptics-field small{color:var(--dk-muted)}
+html[data-theme="dark"] .task-row.swiping,html[data-theme="dark"] .shopping-line.swiping{background:var(--dk-surface)}
+html[data-theme="dark"] .swipe-under.sw-right{background-color:#1f3327}
+html[data-theme="dark"] .swipe-under.is-task.sw-left{background-color:#352d1e}
+html[data-theme="dark"] .swipe-under.is-shop.sw-left{background-color:#26302a}
+html[data-theme="dark"] .modal .modal-head::before{background:#3a463f}
 html[data-theme="dark"] i.done,html[data-theme="dark"] .balance-bar i.done{background:#8fb39b}
 html[data-theme="dark"] .store-mode{background:var(--dk-page)}
 html[data-theme="dark"] .store-head{background:#0f1a14;border-bottom:1px solid var(--dk-line)}

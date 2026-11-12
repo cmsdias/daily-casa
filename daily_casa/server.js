@@ -173,7 +173,13 @@ function dateISO(v){if(typeof v!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(v)||new 
 
 // Revisão: muda a cada gravação; os clientes comparam-na para saber se há alterações de outras pessoas.
 function save(){const tmp=DB_FILE+'.tmp'; fs.writeFileSync(tmp,JSON.stringify(db,null,2),{mode:0o600});fs.renameSync(tmp,DB_FILE);revCounter++;ha?.changed();}
-function send(res,status,data,extra={}){const body=JSON.stringify(data);res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...extra});res.end(body);}
+// 3.19: ações enviadas pela fila (com rede fraca ou depois de estar sem rede) trazem um identificador único (X-Op-Id).
+// Se a mesma ação chegar duas vezes, devolve-se a resposta guardada em vez de a repetir (sem duplicados).
+const OPS_MAX=600,OPS_TTL=7*86400_000;
+function opsGet(key){const o=db.ops?.[key];if(!o)return null;if(Date.now()-o.t>OPS_TTL){delete db.ops[key];return null;}return o;}
+function opsPut(key,status,body){if(!db.ops||typeof db.ops!=='object')db.ops={};db.ops[key]={t:Date.now(),s:status,b:body.length<16000?body:JSON.stringify({ok:true})};
+  const keys=Object.keys(db.ops);if(keys.length>OPS_MAX){keys.sort((a,b)=>db.ops[a].t-db.ops[b].t);for(const k of keys.slice(0,keys.length-OPS_MAX))delete db.ops[k];}}
+function send(res,status,data,extra={}){const body=JSON.stringify(data);if(res.__opKey&&status<500&&status!==429){opsPut(res.__opKey,status,body);try{const tmp=DB_FILE+'.tmp';fs.writeFileSync(tmp,JSON.stringify(db,null,2),{mode:0o600});fs.renameSync(tmp,DB_FILE);}catch{}}res.writeHead(status,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...extra});res.end(body);}
 function fail(res,status,msg){send(res,status,{error:msg});}
 function id(){return crypto.randomUUID();}
 function cleanStr(val,max=150){return String(val??'').trim().slice(0,max);}
@@ -390,6 +396,7 @@ const server=http.createServer(async (req,res)=>{
       return fail(res,404,'Rota de integração não encontrada.');
     }
     const user=readUser(req);if(!user)return fail(res,401,'Inicia sessão para continuar.');
+    {const op=String(req.headers['x-op-id']||'');if(op&&req.method!=='GET'&&/^[A-Za-z0-9_-]{8,64}$/.test(op)){const key=user.id+':'+op;const done=opsGet(key);if(done){res.writeHead(done.s,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','X-Op-Replayed':'1'});return res.end(done.b);}res.__opKey=key;}}
     // Notificações push neste dispositivo (3.3).
     // 3.11: meteorologia da casa.
     if(p==='/api/weather'&&req.method==='GET')return send(res,200,{weather:WEATHER.view(elevated(user))});
