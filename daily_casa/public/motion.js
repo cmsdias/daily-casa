@@ -1,20 +1,19 @@
 'use strict';
 /* 3.19 — Toque e movimento com significado.
- * Haptics: Android com padrões (navigator.vibrate); iPhone (Safari 17.5+) com um toque simples, através de um
- * interruptor escondido, e só dentro de um toque da pessoa. Interruptor «Vibração» em Definições › Aparência
- * (por dispositivo). Nada vibra ao percorrer listas nem quando chegam notificações.
+ * Haptics: só Android (navigator.vibrate), com padrões. No iPhone as apps web não podem vibrar (a via do interruptor
+ * nativo foi fechada pela Apple no iOS 26.5). Interruptor «Vibração» em Definições › Aparência (por dispositivo, só Android). Nada vibra ao percorrer listas nem quando chegam notificações.
  * Movimento: deslizar nas linhas, janelas que fecham a arrastar, listas que se reorganizam a deslizar,
  * entrada de páginas pela direção certa, valores a contar, dia completo, sino e menu «+».
  * Tudo desligado com «reduzir movimento» (os haptics continuam, se estiverem ligados). */
 const IS_IOS=/iP(hone|ad|od)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
-const HAPTIC_OK=!!navigator.vibrate||IS_IOS;
+// 3.19.1: no iPhone não há vibração em apps web (a Apple fechou a única via no iOS 26.5); só Android.
+const HAPTIC_OK=!IS_IOS&&!!navigator.vibrate;
 const hapticsOn=()=>{try{return localStorage.getItem('dc-haptics')!=='0';}catch{return true;}};
 const H_PATTERNS={tick:10,select:6,success:[12,70,22],warn:[24,50,24],error:[14,45,14,45,14]};
 let hIos=null;
 function haptic(kind='tick'){if(!HAPTIC_OK||!hapticsOn())return;
- try{if(!IS_IOS&&navigator.vibrate){navigator.vibrate(H_PATTERNS[kind]||10);return;}}catch{}
- if(IS_IOS){try{if(!hIos){hIos=document.createElement('label');hIos.className='haptic-ios';hIos.setAttribute('aria-hidden','true');const i=document.createElement('input');i.type='checkbox';i.setAttribute('switch','');i.tabIndex=-1;hIos.appendChild(i);document.body.appendChild(hIos);}hIos.click();}catch{}}}
-function hapticsField(){if(!HAPTIC_OK)return '';return `<label class="check-line haptics-field"><input type="checkbox" data-haptics-toggle ${hapticsOn()?'checked':''}/> <span><b>Vibração ao tocar</b><small>Um toque leve ao concluir, marcar compras e mudar de vista${IS_IOS?'. No iPhone é sempre o mesmo toque.':'.'} Só neste dispositivo.</small></span></label>`;}
+try{navigator.vibrate(H_PATTERNS[kind]||10);}catch{}}
+function hapticsField(){if(!HAPTIC_OK)return '';return `<label class="check-line haptics-field"><input type="checkbox" data-haptics-toggle ${hapticsOn()?'checked':''}/> <span><b>Vibração ao tocar</b><small>Um toque leve ao concluir, marcar compras e mudar de vista. Só neste dispositivo.</small></span></label>`;}
 document.addEventListener('change',e=>{const t=e.target.closest?.('[data-haptics-toggle]');if(!t)return;try{localStorage.setItem('dc-haptics',t.checked?'1':'0');}catch{}if(t.checked)haptic('tick');});
 const calm=()=>matchMedia('(prefers-reduced-motion: reduce)').matches;
 

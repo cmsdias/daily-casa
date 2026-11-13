@@ -1,3 +1,8 @@
+# 3.19.1 — Vibração só no Android
+
+- No iPhone, as apps web deixaram de poder vibrar: a Apple fechou essa possibilidade no iOS 26.5. A opção «Vibração ao tocar» passa a aparecer só no Android.
+- No Android, puxar para atualizar também vibra quando passa o ponto em que, ao largar, a app atualiza.
+
 # 3.19.0 — Abrir já, responder já, sentir o toque
 
 - A app abre logo com os últimos dados guardados no telemóvel e atualiza-os em segundo plano, com uma barra fina no topo. Com rede fraca, já não fica à espera no ecrã de abertura.
