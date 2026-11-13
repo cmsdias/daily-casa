@@ -2308,7 +2308,6 @@ html.srch-lock,html.srch-lock body{overflow:hidden}
 .wl-dupe svg{width:17px;height:17px;flex:none;margin-top:2px}
 
 /* ───────── 3.19 — Toque e movimento ───────── */
-.haptic-ios{position:fixed;left:-9999px;top:0;width:1px;height:1px;overflow:hidden;opacity:0;pointer-events:none}
 .haptics-field{margin-top:14px;align-items:flex-start}
 .haptics-field span{display:flex;flex-direction:column;gap:2px}
 .haptics-field small{font-size:13px;color:#657364;font-weight:400}

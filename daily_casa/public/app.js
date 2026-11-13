@@ -404,7 +404,7 @@ if(document.readyState==='complete')main();else document.addEventListener('DOMCo
  const blocked=t=>modal||quickCreateOpen||!store.user||t.closest('.tab-nav,.more-sheet,input,textarea,select,.modal,.quick-create-menu');
  window.addEventListener('touchstart',e=>{if(busy||window.scrollY>0||e.touches.length!==1||blocked(e.target)){startY=null;return;}startY=e.touches[0].clientY;dist=0;},{passive:true});
  window.addEventListener('touchmove',e=>{if(startY===null||busy)return;const dy=e.touches[0].clientY-startY;if(dy<=0||window.scrollY>0){dist=0;show(0);return;}
-  dist=Math.min(MAX,dy*0.5);if(e.cancelable)e.preventDefault();show(dist);text.textContent=dist>=THRESHOLD?'Largar para atualizar':'Puxar para atualizar';el.classList.toggle('ptr-ready',dist>=THRESHOLD);},{passive:false});
+  dist=Math.min(MAX,dy*0.5);if(e.cancelable)e.preventDefault();show(dist);text.textContent=dist>=THRESHOLD?'Largar para atualizar':'Puxar para atualizar';const ready=dist>=THRESHOLD;if(ready&&!el.classList.contains('ptr-ready')&&typeof haptic==='function')haptic('tick');el.classList.toggle('ptr-ready',ready);},{passive:false});
  window.addEventListener('touchend',async()=>{if(startY===null||busy)return;startY=null;el.classList.remove('ptr-ready');
   if(dist<THRESHOLD){hide();return;}
   busy=true;el.classList.add('ptr-settle','ptr-loading');show(THRESHOLD);text.textContent='A atualizar…';
