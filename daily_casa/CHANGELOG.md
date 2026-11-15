@@ -1,3 +1,9 @@
+# 3.20.0 — Mais fácil de tocar e de usar com teclado
+
+- Os controlos pequenos (concluir tarefa, marcar comprado, «+ Novo», cabeçalhos «Atrasadas» e «Sem data», chips e botões secundários) passam a aceitar toques numa área de pelo menos 44 px, sem mudar o aspeto.
+- Com teclado, o Tab já não sai de um modal aberto para a página por trás, e ao fechar o modal o foco volta ao botão que o abriu.
+- Nova ligação «Saltar para o conteúdo», que só aparece ao carregar em Tab no computador.
+
 # 3.19.1 — Vibração só no Android
 
 - No iPhone, as apps web deixaram de poder vibrar: a Apple fechou essa possibilidade no iOS 26.5. A opção «Vibração ao tocar» passa a aparecer só no Android.

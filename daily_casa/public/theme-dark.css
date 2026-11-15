@@ -458,6 +458,7 @@ html[data-theme="dark"] .swipe-under.is-task.sw-left{background-color:#453a21}
 html[data-theme="dark"] .swipe-under.is-shop.sw-left{background-color:#28332c}
 html[data-theme="dark"] .swipe-under.is-shop.sw-left.sw-ready{background-color:#2d3a32}
 @media (max-width:650px) and (pointer:coarse){html[data-theme="dark"] .modal .modal-head::before{background:#2d3932}}
+html[data-theme="dark"] .skip-link{color:#ffffff}
 html[data-theme="dark"] .dp-day.sel{background:#C9A568;color:#17261E}
 @media (max-width:650px){html[data-theme="dark"] .mobile-nav.tab-nav{background:var(--dk-surface);border:1px solid #2C3A32;box-shadow:0 14px 30px -12px rgba(0,0,0,.7)}html[data-theme="dark"] .mobile-nav.tab-nav>.tab-item{color:#A3AFA7}html[data-theme="dark"] .mobile-nav.tab-nav>.tab-item.active{background:#2E3B34;color:#E7ECE8}}
 html[data-theme="dark"] .dp-day.out{color:#58665E}
