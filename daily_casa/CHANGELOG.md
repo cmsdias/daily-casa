@@ -1,3 +1,13 @@
+# 3.21.0 — Ler melhor e menos toques
+
+- Textos secundários com mais contraste no tema claro: legendas, horas das notificações, etiquetas, pré-títulos, dias passados da semana e dias de outro mês no calendário.
+- O círculo de concluir tarefa e a borda dos campos ficam mais marcados, para se ver logo onde se toca e onde se escreve.
+- Letra mínima de 12 px no texto informativo (etiquetas, legendas, horas, prioridade, botões pequenos, dias da semana do calendário).
+- Erros junto ao campo: o campo fica a vermelho, a mensagem aparece logo por baixo e o cursor volta ao campo. Vale para os campos obrigatórios de todos os formulários.
+- Compras: marcar um produto como comprado já não pede confirmação. Aparece «Anular» durante 5 segundos.
+- Na primeira vez que se abrem as Tarefas no telemóvel, a primeira linha desliza um pouco sozinha, para mostrar que deslizar conclui. Só acontece uma vez e não acontece com «reduzir movimento».
+- As filas de chips que deslizam para o lado (calendário, filtros, pesquisa) esbatem na margem onde há mais conteúdo.
+
 # 3.20.0 — Mais fácil de tocar e de usar com teclado
 
 - Os controlos pequenos (concluir tarefa, marcar comprado, «+ Novo», cabeçalhos «Atrasadas» e «Sem data», chips e botões secundários) passam a aceitar toques numa área de pelo menos 44 px, sem mudar o aspeto.

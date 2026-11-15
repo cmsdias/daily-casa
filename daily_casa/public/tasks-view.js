@@ -107,7 +107,7 @@ modalRenderers['quick-task']=holder=>{
  input.addEventListener('input',()=>{q.text=input.value;qtRefresh();});
  input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();f.requestSubmit();}});
  f.addEventListener('change',e=>{if(e.target.classList.contains('qt-date')&&e.target.value){const [y,m,d]=e.target.value.split('-');qtInsert(`${Number(d)}/${Number(m)}/${y}`);}});
- f.addEventListener('submit',async e=>{e.preventDefault();const r=qtParse();if(!r.title)return toast('Escreve o que é preciso fazer.');
+ f.addEventListener('submit',async e=>{e.preventDefault();const r=qtParse();if(!r.title)return fieldError(f.querySelector('#qt-text'),'Escreve o que é preciso fazer, por exemplo «Regar as plantas».');
   const kind=r.kind||q.kind;const body={title:r.title,kind,room:r.room||'Geral',priority:r.priority||'P3',dueDate:r.dueDate||'',assignedTo:r.assignedTo||null,repeat:r.repeat||(kind==='routine'?'weekly':'none'),estimatedMinutes:r.estimatedMinutes??null,status:'todo',suggested:false,thisWeek:false,subtasks:[]};
   const btn=f.querySelector('[type=submit]');btn.disabled=true;
   try{await api('/api/tasks','POST',body);modal=null;await reload();toast(kind==='routine'?'Rotina criada.':`Tarefa criada${r.dueDate?' para '+(r.dueDate===today()?'hoje':dateShortPT(r.dueDate)):''}.`);}catch(err){toast(err.message);btn.disabled=false;}});

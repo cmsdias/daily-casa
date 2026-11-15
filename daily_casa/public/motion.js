@@ -75,11 +75,29 @@ function countUp(){if(calm())return;document.querySelectorAll('#content [data-co
 function afterRender(pageKey,prevKey){const content=document.getElementById('content');
  if(prevKey&&pageKey!==prevKey&&content&&!calm()){const a=NAV_ORDER.indexOf(prevKey.split('|')[0]),b=NAV_ORDER.indexOf(pageKey.split('|')[0]);if(a>=0&&b>=0&&a!==b){content.classList.remove('page-enter');content.classList.add(b>a?'enter-right':'enter-left');}}
  if(pageKey!==prevKey)countUp();
+ if(pageKey!==prevKey&&pageKey==='tasks|list')swipeHint();
+ scrollFades();
  // Dia completo: o anel enche e brilha uma vez.
  const ring=document.querySelector('.today-ring');const full=ring?ringFull(ring):null;
  if(ring&&full&&lastRingFull===false&&(celebrateNext||pageKey===prevKey)){ring.closest('.today-hero')?.classList.add('celebrate');if(!celebrateNext)haptic('success');}
  if(ring)lastRingFull=full;celebrateNext=false;
  // Sino: abana uma vez quando chega uma notificação nova com a app aberta.
  const unread=(typeof notifications==='function'?notifications():store.notifications||[]).filter(n=>!n.read&&!n.cleared).length;if(lastUnread!=null&&unread>lastUnread&&!calm())document.querySelectorAll('.bell-btn').forEach(b=>{b.classList.remove('bell-shake');void b.offsetWidth;b.classList.add('bell-shake');});lastUnread=unread;}
+/* 3.21 · Pista de deslizar: na primeira visita às Tarefas, ao toque, a primeira linha desliza um pouco e volta. Uma única vez por dispositivo. */
+function swipeHint(){if(calm()||!matchMedia('(pointer:coarse)').matches)return;try{if(localStorage.getItem('dc-swipe-hint'))return;}catch{return;}
+ const row=[...document.querySelectorAll('#content .task-row')].find(r=>{const b=r.getBoundingClientRect();return b.height&&b.top>80&&b.bottom<innerHeight-110;});if(!row)return;
+ const t=tasks().find(x=>x.id===row.dataset.task);if(!t||t.status==='done'||!canCompleteVisible(t))return;
+ try{localStorage.setItem('dc-swipe-hint','1');}catch{}
+ setTimeout(()=>{if(!row.isConnected||row.classList.contains('swiping'))return;const par=row.parentElement;const restore=getComputedStyle(par).position==='static';if(restore)par.style.position='relative';
+  const u=document.createElement('div');u.className='swipe-under is-task sw-right';u.setAttribute('aria-hidden','true');Object.assign(u.style,{top:row.offsetTop+'px',left:row.offsetLeft+'px',width:row.offsetWidth+'px',height:row.offsetHeight+'px'});par.insertBefore(u,row);
+  const an=row.animate([{transform:'translateX(0)'},{transform:'translateX(64px)',offset:.35},{transform:'translateX(64px)',offset:.55},{transform:'translateX(0)'}],{duration:1400,easing:'cubic-bezier(.3,.7,.3,1)'});
+  const done=()=>{u.remove();if(restore)par.style.position='';};an.onfinish=done;an.oncancel=done;
+  document.addEventListener('pointerdown',()=>{if(an.playState==='running')an.cancel();},{once:true,capture:true});},700);}
+/* 3.21 · Filas que deslizam para o lado: esbatimento na margem onde há mais conteúdo. */
+const FADE_ROWS='.cal-filters,.cal-types,.filter-chips,.srch-chips,.rooms-carousel,.month-strip';
+function fadeRow(el){const max=el.scrollWidth-el.clientWidth;el.classList.toggle('fade-r',max>2&&el.scrollLeft<max-2);el.classList.toggle('fade-l',max>2&&el.scrollLeft>2);}
+function scrollFades(){document.querySelectorAll(FADE_ROWS).forEach(fadeRow);}
+document.addEventListener('scroll',e=>{const el=e.target;if(el instanceof Element&&el.matches(FADE_ROWS))fadeRow(el);},{capture:true,passive:true});
+window.addEventListener('resize',()=>scrollFades(),{passive:true});
 function ringFull(ring){const p=parseFloat(getComputedStyle(ring).getPropertyValue('--p')||ring.style.getPropertyValue('--p'));return Number.isFinite(p)?p>=100:false;}
 {const base=render;render=function(...a){const prev=lastPageKey;const key=page+'|'+(typeof taskView!=='undefined'?taskView:'');const snap=prev===key?flipSnap():null;const r=base.apply(this,a);lastPageKey=key;try{flipPlay(snap);afterRender(key,prev);}catch{}return r;};}
