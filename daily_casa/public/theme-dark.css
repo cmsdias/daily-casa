@@ -454,6 +454,8 @@ html[data-theme="dark"] .routine-caption.is-sample{color:#d7c6a1}
 html[data-theme="dark"] .field-error{color:#d49992}
 html[data-theme="dark"] .undo-toast button{color:#d4e5dc}
 html[data-theme="dark"] .undo-toast button:focus-visible{outline:2px solid #36423a}
+html[data-theme="dark"] .pw-rules.touched li:not(.ok){color:#d49992}
+html[data-theme="dark"] .pw-rules li.ok{color:#a2dbba}
 html[data-theme="dark"] .dp-day.sel{background:#C9A568;color:#17261E}
 @media (max-width:650px){html[data-theme="dark"] .mobile-nav.tab-nav{background:var(--dk-surface);border:1px solid #2C3A32;box-shadow:0 14px 30px -12px rgba(0,0,0,.7)}html[data-theme="dark"] .mobile-nav.tab-nav>.tab-item{color:#A3AFA7}html[data-theme="dark"] .mobile-nav.tab-nav>.tab-item.active{background:#2E3B34;color:#E7ECE8}}
 html[data-theme="dark"] .dp-day.out{color:#58665E}

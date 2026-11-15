@@ -16,6 +16,9 @@ const FIN=require('./public/finance-core.js');
 const SITEICON=require('./lib/siteicon');const siteIcon=SITEICON.createSiteIcon();
 const {createQuotes}=require('./lib/quotes');const QUOTES=createQuotes();
 const UNITS=require('./public/shopping-units.js');
+const PWR=require('./public/password-rules.js');
+// 3.22: regras de palavra-passe (as mesmas da app): comprimento, sem dados da pessoa, sem palavras comuns ou previsíveis.
+const pwProblem=(pw,u)=>{const r=PWR.check(pw,{name:u&&u.name,username:u&&u.username,email:u&&u.email});return r.ok?null:r.error;};
 function cleanUnit(v){const u=cleanStr(v,20);if(!u)return '';if(!UNITS.KEYS.includes(u))throw Error('Unidade inválida.');return u;}
 // Quantidade: número (vírgula decimal, ex.: «0,5») ou, por compatibilidade, texto livre das versões anteriores.
 function cleanQty(v){const raw=cleanStr(v,50);if(!raw)return '1';const n=raw.replace(',','.');return /^\d{1,5}(\.\d{1,3})?$/.test(n)?n.replace('.',','):raw;}
@@ -298,6 +301,7 @@ const server=http.createServer(async (req,res)=>{
       const name=cleanStr(b.name,80),password=String(b.password||'');let email;try{email=cleanEmail(b.email);}catch(e){return fail(res,400,e.message);}
       const username=b.username?cleanStr(b.username,40).toLowerCase():usernameFrom(email,name);
       if(name.length<2||(!email&&!/^[a-z0-9._-]{3,40}$/.test(username))||!/^[a-z0-9._-]{3,40}$/.test(username)||password.length<10)return fail(res,400,'Nome, email e palavra-passe (mín. 10 caracteres) são obrigatórios.');
+      {const pe=pwProblem(password,{name,username,email});if(pe)return fail(res,400,pe);}
       const u={id:id(),name,username,email,role:'admin',avatar:'●',passwordHash:passwordHash(password),authVersion:1};db.people.push(u);save();return send(res,200,{user:{id:u.id,name:u.name,role:u.role}},{'Set-Cookie':cookie(req,session(u))});
     }
     if(p==='/api/login'&&req.method==='POST'){
@@ -340,6 +344,7 @@ const server=http.createServer(async (req,res)=>{
       for(const k of ['ip:'+ip,'acct:'+email]){const st=LIM.reset.status(k);if(st.blocked)return tooMany(res,st);}
       const u=findByLogin(email);const rc=u&&resetCodes.get(u.id);
       const pw=String(b.password||'');if(pw.length<10)return fail(res,400,'A nova palavra-passe deve ter pelo menos 10 caracteres.');
+      {const pe=pwProblem(pw,u||{email});if(pe)return fail(res,400,pe);}
       const ok=rc&&rc.exp>Date.now()&&rc.tries<5&&crypto.timingSafeEqual(Buffer.from(rc.hash),Buffer.from(crypto.createHash('sha256').update(u.id+':'+cleanStr(b.code,6)).digest('hex')));
       if(!ok){if(rc)rc.tries++;const a=LIM.reset.fail('ip:'+ip),c=LIM.reset.fail('acct:'+email);if(a.blocked)return tooMany(res,a);if(c.blocked)return tooMany(res,c);return fail(res,400,'Código inválido ou expirado. Pede um novo código.');}
       resetCodes.delete(u.id);u.passwordHash=passwordHash(pw);u.authVersion=(u.authVersion||1)+1;u.mustChangePassword=false;logAction(u,'password.reset',u.id);save();
@@ -352,7 +357,7 @@ const server=http.createServer(async (req,res)=>{
       const ip=NET.info(req).client;const st=LIM.reset.status('inv:'+ip);if(st.blocked)return tooMany(res,st);
       const q=findAccess(am[1]);if(!q){LIM.reset.fail('inv:'+ip);return fail(res,404,'Esta ligação já não é válida. Pede ao administrador para te enviar outra.');}
       if(req.method==='GET')return send(res,200,{name:q.name,email:q.email||'',roleLabel:INV.ROLES[q.role]||(q.role==='admin'?'Administrador':'Morador')});
-      if(req.method==='POST'){const pw=String(b.password||'');if(pw.length<10)return fail(res,400,'A palavra-passe deve ter pelo menos 10 caracteres.');
+      if(req.method==='POST'){const pw=String(b.password||'');if(pw.length<10)return fail(res,400,'A palavra-passe deve ter pelo menos 10 caracteres.');{const pe=pwProblem(pw,q);if(pe)return fail(res,400,pe);}
         const by=db.people.find(x=>x.id===q.activation.by);q.passwordHash=passwordHash(pw);q.mustChangePassword=false;delete q.activation;q.authVersion=(q.authVersion||1)+1;LIM.account.clear((q.email||q.username||'').toLowerCase());logAction(q,'access.accept',q.id);
         if(by&&isActive(by)&&by.id!==q.id)notif.add(by.id,'security',`${q.name.split(' ')[0]} entrou no Daily Casa`,'Já escolheu a palavra-passe definitiva.',{page:'people'});
         const remember=b.remember!==false;save();return send(res,200,{user:{id:q.id,name:q.name,role:q.role}},{'Set-Cookie':cookie(req,session(q,remember),remember)});}
@@ -364,7 +369,7 @@ const server=http.createServer(async (req,res)=>{
       if(!im[2]&&req.method==='GET')return send(res,200,{email:x.email,name:x.name||'',roleLabel:INV.ROLES[x.role]||'Morador',invitedBy:by?by.name.split(' ')[0]:''});
       if(im[2]&&req.method==='POST'){
         const name=cleanStr(b.name,80),pw=String(b.password||'');
-        if(name.length<2)return fail(res,400,'Indica o teu nome (pelo menos 2 letras).');if(pw.length<10)return fail(res,400,'A palavra-passe deve ter pelo menos 10 caracteres.');
+        if(name.length<2)return fail(res,400,'Indica o teu nome (pelo menos 2 letras).');if(pw.length<10)return fail(res,400,'A palavra-passe deve ter pelo menos 10 caracteres.');{const pe=pwProblem(pw,{name,email:x.email});if(pe)return fail(res,400,pe);}
         if(db.people.some(q=>(q.email||'').toLowerCase()===x.email)){INVITES.markAccepted(x,null);save();return fail(res,409,'Já existe uma conta com este email. Entra com ela ou usa «Esqueci-me da palavra-passe».');}
         const person={id:id(),name,username:uniqueUsername(x.email,name),email:x.email,passwordHash:passwordHash(pw),role:x.role,authVersion:1,avatar:'●',active:true};
         db.people.push(person);INVITES.markAccepted(x,person.id);logAction(person,'invite.accept',person.id);
@@ -721,6 +726,7 @@ const server=http.createServer(async (req,res)=>{
       let username=b.username?cleanStr(b.username,40).toLowerCase():usernameFrom(email,name);
       if(name.length<2||!/^[a-z0-9._-]{3,40}$/.test(username)||pw.length<10||(!email&&!b.username))return fail(res,400,'Nome, email e palavra-passe temporária (mín. 10 caracteres) são obrigatórios.');
       if(db.people.some(p=>p.username===username))return fail(res,409,'Esse nome de utilizador já existe.');
+      {const pe=pwProblem(pw,{name,username,email});if(pe)return fail(res,400,pe);}
       const person={id:id(),name,username,email,passwordHash:passwordHash(pw),role:['manager','resident','collaborator'].includes(b.role)?b.role:'resident',authVersion:1,avatar:'●',active:true,mustChangePassword:true};db.people.push(person);INVITES.cancelForEmail(email);logAction(user,'person.create',person.id);save();return send(res,201,{people:peopleFor(user)});
     }
     if(p==='/api/me'&&req.method==='PATCH'){
@@ -765,6 +771,7 @@ const server=http.createServer(async (req,res)=>{
     if(personMatch&&req.method==='POST'){
       if(user.role!=='admin'&&user.id!==personMatch[1])return fail(res,403,'Sem permissão.');const target=db.people.find(u=>u.id===personMatch[1]);if(!target)return fail(res,404,'Pessoa não encontrada.');
       if(String(b.password||'').length<10)return fail(res,400,'A nova palavra-passe deve ter pelo menos 10 caracteres.');
+      {const pe=pwProblem(String(b.password),target);if(pe)return fail(res,400,pe);}
       if(target.id===user.id&&!verifyPw(String(b.currentPassword||'').slice(0,200),target.passwordHash))return fail(res,403,'A palavra-passe atual não está correta.');
       if(target.id===user.id&&String(b.password)===String(b.currentPassword||''))return fail(res,400,'A nova palavra-passe tem de ser diferente da atual.');
       target.passwordHash=passwordHash(b.password);target.authVersion=(target.authVersion||1)+1;target.mustChangePassword=target.id!==user.id;delete target.activation;logAction(user,'person.password',target.id);save();

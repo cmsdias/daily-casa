@@ -1,3 +1,12 @@
+# 3.22.0 — Regras de palavra-passe
+
+- As novas palavras-passe passam a seguir regras, verificadas na app e também no servidor:
+  - pelo menos 10 caracteres (máximo 128);
+  - sem o nome da pessoa, o nome de utilizador, o email ou o nome da app;
+  - sem palavras-passe comuns ou previsíveis (sequências, repetições, clubes, meses).
+- As regras aparecem por baixo do campo e ficam verdes à medida que se escreve. Se alguma falhar, o erro aparece junto ao campo antes de enviar.
+- As regras valem para a primeira configuração, os convites, a recuperação, a alteração no perfil e as palavras-passe temporárias criadas pelo administrador. As palavras-passe atuais continuam a funcionar.
+
 # 3.21.1 — Equilíbrio da casa com os trabalhos registados
 
 - Um trabalho feito em conjunto passa a contar para cada pessoa que o registou, e não só para quem concluiu a tarefa.

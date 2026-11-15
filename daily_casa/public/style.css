@@ -2371,3 +2371,11 @@ main.main:focus{outline:none}
 :is(.cal-filters,.cal-types,.filter-chips,.srch-chips,.rooms-carousel,.month-strip).fade-r{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,#000 calc(100% - 36px),transparent)}
 :is(.cal-filters,.cal-types,.filter-chips,.srch-chips,.rooms-carousel,.month-strip).fade-l{-webkit-mask-image:linear-gradient(90deg,transparent,#000 36px);mask-image:linear-gradient(90deg,transparent,#000 36px)}
 :is(.cal-filters,.cal-types,.filter-chips,.srch-chips,.rooms-carousel,.month-strip).fade-l.fade-r{-webkit-mask-image:linear-gradient(90deg,transparent,#000 36px,#000 calc(100% - 36px),transparent);mask-image:linear-gradient(90deg,transparent,#000 36px,#000 calc(100% - 36px),transparent)}
+
+/* 3.22 · Regras da nova palavra-passe, por baixo do campo */
+.pw-rules{list-style:none;margin:8px 0 0;padding:0;display:grid;gap:4px;font-size:12.5px;color:var(--muted)}
+.pw-rules li{display:flex;align-items:center;gap:7px}
+.pw-rules li svg{flex:0 0 auto;opacity:.35}
+.pw-rules.touched li:not(.ok){color:#a33d31}
+.pw-rules li.ok{color:#2f7a4f}
+.pw-rules li.ok svg{opacity:1}
