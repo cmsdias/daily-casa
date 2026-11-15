@@ -124,10 +124,17 @@ function balance(tasks,history,people,{today,minutesDefault=15,workLogs=[]}={}){
  const row=id=>rows.find(r=>r.id===id);
  // 3.15.2: se quem concluiu registou o tempo dessa tarefa nesta semana, conta o tempo registado em vez da estimativa
  // (um registo por conclusão; conclusões sem registo continuam a contar a estimativa).
- const logged=new Map();for(const l of workLogs||[]){if(!l||!l.taskId)continue;const day=String(l.date||'').slice(0,10);if(day<start||day>end)continue;const k=l.userId+'|'+l.taskId;const g=logged.get(k)||{min:0,n:0};g.min+=Math.max(0,Number(l.minutes)||0);g.n++;logged.set(k,g);}
+ // 3.21.1: o tempo registado conta para cada pessoa que o registou, mesmo que não tenha sido ela a concluir a tarefa
+ // (trabalhos feitos em conjunto), e os trabalhos registados sem tarefa associada também contam.
+ const logged=new Map(),free=new Map();
+ for(const l of workLogs||[]){if(!l||!l.userId)continue;const day=String(l.date||'').slice(0,10);if(day<start||day>end)continue;const min=Math.max(0,Number(l.minutes)||0);
+  if(l.taskId){const k=l.userId+'|'+l.taskId;const g=logged.get(k)||{min:0,n:0};g.min+=min;g.n++;logged.set(k,g);}
+  else{const g=free.get(l.userId)||{min:0,works:new Set()};g.min+=min;g.works.add(l.groupId||l.id);free.set(l.userId,g);}}
  const done=new Map();
  for(const h of history||[]){const day=String(h.at||'').slice(0,10);if(day<start||day>end)continue;const r=row(h.by);if(!r)continue;const k=h.by+'|'+h.taskId;done.set(k,(done.get(k)||0)+1);r.doneCount++;}
  for(const [k,n] of done){const [by,taskId]=k.split('|');const r=row(by);const g=logged.get(k);const e=est(byId.get(taskId));r.done+=g?g.min+e*Math.max(0,n-g.n):e*n;}
+ for(const [k,g] of logged){if(done.has(k))continue;const r=row(k.split('|')[0]);if(!r)continue;r.done+=g.min;r.doneCount++;}
+ for(const [uid,g] of free){const r=row(uid);if(!r)continue;r.done+=g.min;r.doneCount+=g.works.size;}
  for(const t of tasks||[]){if(t.status==='done'||!t.assignedTo)continue;const r=row(t.assignedTo);if(!r)continue;if(!(t.dueDate?t.dueDate<=end:t.thisWeek))continue;r.planned+=est(t);r.plannedCount++;}
  rows.forEach(r=>r.total=r.done+r.planned);rows.sort((a,b)=>b.total-a.total);
  let suggestion=null;

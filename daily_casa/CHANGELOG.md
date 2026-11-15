@@ -1,3 +1,9 @@
+# 3.21.1 — Equilíbrio da casa com os trabalhos registados
+
+- Um trabalho feito em conjunto passa a contar para cada pessoa que o registou, e não só para quem concluiu a tarefa.
+- Os trabalhos registados sem tarefa associada também contam no equilíbrio da semana.
+- A explicação na página do equilíbrio foi atualizada.
+
 # 3.21.0 — Ler melhor e menos toques
 
 - Textos secundários com mais contraste no tema claro: legendas, horas das notificações, etiquetas, pré-títulos, dias passados da semana e dias de outro mês no calendário.
