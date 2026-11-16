@@ -1,3 +1,7 @@
+# 3.22.1 — Palavra-passe com mínimo de 8 caracteres
+
+- O comprimento mínimo das novas palavras-passe passa de 10 para 8 caracteres. Mantém-se a recusa de palavras-passe comuns, previsíveis ou com o nome ou o email da pessoa.
+
 # 3.22.0 — Regras de palavra-passe
 
 - As novas palavras-passe passam a seguir regras, verificadas na app e também no servidor:
