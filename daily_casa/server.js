@@ -17,6 +17,16 @@ const SITEICON=require('./lib/siteicon');const siteIcon=SITEICON.createSiteIcon(
 const {createQuotes}=require('./lib/quotes');const QUOTES=createQuotes();
 const UNITS=require('./public/shopping-units.js');
 const PWR=require('./public/password-rules.js');
+const WA=require('./lib/webauthn.js');
+// 3.23: passkeys (Face ID, Touch ID, impressão digital). Só no endereço público em HTTPS (ou em localhost, para testes),
+// porque cada passkey fica ligada ao domínio. Os desafios vivem em memória durante 5 minutos e servem uma única vez.
+const PK_TTL=5*60_000,pkChallenges=new Map(),recentLogin=new Map();
+function pkOrigin(req){const n=NET.info(req);if(n.origin)return n.origin;const h=String(req.headers.host||'').toLowerCase();return /^localhost(:\d{1,5})?$/.test(h)?'http://'+h:'';}
+function pkPut(data){const now=Date.now();for(const [k,v] of pkChallenges)if(v.exp<now)pkChallenges.delete(k);if(pkChallenges.size>500)pkChallenges.delete(pkChallenges.keys().next().value);const c=WA.newChallenge();pkChallenges.set(c,{...data,exp:now+PK_TTL});return c;}
+function pkTake(challengeB64){const v=pkChallenges.get(challengeB64);pkChallenges.delete(challengeB64);return v&&v.exp>=Date.now()?v:null;}
+const pkChallengeOf=cred=>{try{return JSON.parse(Buffer.from(String(cred?.response?.clientDataJSON||''),'base64url').toString('utf8')).challenge||'';}catch{return '';}};
+const pkList=u=>(Array.isArray(u.passkeys)?u.passkeys:[]);
+const pkView=k=>({id:k.id,name:k.name||'Passkey',createdAt:k.createdAt,lastUsedAt:k.lastUsedAt||'',rpId:k.rpId});
 // 3.22: regras de palavra-passe (as mesmas da app): comprimento, sem dados da pessoa, sem palavras comuns ou previsíveis.
 const pwProblem=(pw,u)=>{const r=PWR.check(pw,{name:u&&u.name,username:u&&u.username,email:u&&u.email});return r.ok?null:r.error;};
 function cleanUnit(v){const u=cleanStr(v,20);if(!u)return '';if(!UNITS.KEYS.includes(u))throw Error('Unidade inválida.');return u;}
@@ -193,7 +203,7 @@ const resetCodes=new Map();
 // «Manter sessão iniciada»: 60 dias com o visto; sem ele, a sessão dura até fechar o browser (no máximo 12 horas).
 const REMEMBER_MS=60*86400_000,SHORT_MS=12*3600_000;
 function tokenRemember(req){try{const t=((req.headers.cookie||'').match(/(?:^|;\s*)casa_session=([^;]+)/)||[])[1];return JSON.parse(Buffer.from(t.split('.')[0],'base64url').toString()).r!==0;}catch{return true;}}
-function session(user,remember=true){const payload=Buffer.from(JSON.stringify({id:user.id,v:user.authVersion||1,r:remember?1:0,exp:Date.now()+(remember?REMEMBER_MS:SHORT_MS)})).toString('base64url');const mac=crypto.createHmac('sha256',db.secret).update(payload).digest('base64url');return `${payload}.${mac}`;}
+function session(user,remember=true){recentLogin.set(user.id,Date.now());const payload=Buffer.from(JSON.stringify({id:user.id,v:user.authVersion||1,r:remember?1:0,exp:Date.now()+(remember?REMEMBER_MS:SHORT_MS)})).toString('base64url');const mac=crypto.createHmac('sha256',db.secret).update(payload).digest('base64url');return `${payload}.${mac}`;}
 function readUser(req){const token=((req.headers.cookie||'').match(/(?:^|;\s*)casa_session=([^;]+)/)||[])[1];if(!token)return null;
 try{const [payload,mac]=token.split('.');const sig=crypto.createHmac('sha256',db.secret).update(payload).digest('base64url');if(!mac||sig.length!==mac.length||!crypto.timingSafeEqual(Buffer.from(mac),Buffer.from(sig)))return null;const claim=JSON.parse(Buffer.from(payload,'base64url').toString());if(claim.exp<Date.now())return null;const u=db.people.find(x=>x.id===claim.id&&(x.authVersion||1)===claim.v);return u&&isActive(u)&&scheduleAllows(u)?u:null;}catch{return null;}}
 function cookie(req,token,remember=true){const secure=NET.info(req).https?'; Secure':'';const age=!token?'; Max-Age=0':remember?`; Max-Age=${REMEMBER_MS/1000}`:'';return `casa_session=${token}; Path=/; HttpOnly; SameSite=Strict${age}${secure}`;}
@@ -202,7 +212,7 @@ async function parseBody(req,limit=256_000){let size=0;let chunks=[];for await(c
 // a data de nascimento completa só para o próprio e o administrador (os restantes veem o dia e o mês, para os aniversários).
 function personView(viewer,p){const self=viewer.id===p.id,admin=roleOf(viewer)==='admin',collab=roleOf(viewer)==='collaborator';
  return {id:p.id,name:p.name,username:collab&&!self?'':p.username,role:roleOf(p),avatar:p.avatar||'●',photo:p.photo||'',active:p.active!==false,
-  ...(admin?{accessDays:Array.isArray(p.accessDays)?p.accessDays:[],mustChangePassword:!!p.mustChangePassword}:{}),
+  ...(admin?{accessDays:Array.isArray(p.accessDays)?p.accessDays:[],mustChangePassword:!!p.mustChangePassword,passkeyCount:Array.isArray(p.passkeys)?p.passkeys.length:0}:{}),
   ...(self||admin||elevated(viewer)?{email:p.email||'',phone:p.phone||''}:{}),
   ...(self?{notifPrefs:p.notifPrefs||{},hideWeather:!!p.hideWeather,pushOff:!!p.pushOff,pushReady:!!(db.ha?.notify?.[p.id]),webPush:!!db.push?.subs?.some(s=>s.userId===p.id)}:{}),
  ...(self||admin?{birthDate:p.birthDate||''}:(!collab&&p.birthDate?{birthday:p.birthDate.slice(5)}:{}))};}
@@ -295,7 +305,7 @@ const server=http.createServer(async (req,res)=>{
   const bodyLimit=p==='/api/backups/upload'?30_000_000:/^\/api\/incidents\/[^/]+\/photos$/.test(p)?3_000_000:/^\/api\/equipment\/[^/]+\/docs$/.test(p)?12_000_000:/^\/api\/tasks\/[^/]+\/photos$/.test(p)?3_000_000:256_000;
   let b={};if(req.method!=='GET')try{b=await parseBody(req,bodyLimit);}catch(e){return fail(res,400,e.message);}
   try{
-    if(p==='/api/bootstrap'&&req.method==='GET')return send(res,200,{setup:db.people.length===0,publicUrl:publicUrl(),mail:MAILER.status().configured,user:(()=>{const u=readUser(req);return u?{id:u.id,name:u.name,role:u.role,mustChangePassword:!!u.mustChangePassword}:null;})()});
+    if(p==='/api/bootstrap'&&req.method==='GET')return send(res,200,{passkeys:!!pkOrigin(req),setup:db.people.length===0,publicUrl:publicUrl(),mail:MAILER.status().configured,user:(()=>{const u=readUser(req);return u?{id:u.id,name:u.name,role:u.role,mustChangePassword:!!u.mustChangePassword}:null;})()});
     if(p==='/api/setup'&&req.method==='POST'){
       if(db.people.length)return fail(res,409,'Aplicação já configurada.');
       const name=cleanStr(b.name,80),password=String(b.password||'');let email;try{email=cleanEmail(b.email);}catch(e){return fail(res,400,e.message);}
@@ -320,6 +330,26 @@ const server=http.createServer(async (req,res)=>{
       if(!isActive(u))return fail(res,403,'Esta conta foi desativada. Fala com o administrador da casa.');
       if(!scheduleAllows(u))return fail(res,403,'O teu acesso está disponível apenas em: '+scheduleText(u)+'.');
       LIM.ip.success('login:'+ip);LIM.account.success(username);const remember=b.remember!==false&&b.remember!=='0'&&b.remember!=='off';return send(res,200,{user:{id:u.id,name:u.name,role:u.role,mustChangePassword:!!u.mustChangePassword}},{'Set-Cookie':cookie(req,session(u,remember),remember)});
+    }
+    // Entrar com passkey: o telemóvel mostra as passkeys guardadas para este domínio (sem escrever o email).
+    if(p==='/api/passkeys/login/options'&&req.method==='POST'){
+      const origin=pkOrigin(req);if(!origin)return fail(res,400,'As passkeys só funcionam no endereço seguro da casa.');
+      const ip=NET.info(req).client;const st=LIM.ip.status('login:'+ip);if(st.blocked)return tooMany(res,st);
+      const challenge=pkPut({type:'login',origin});return send(res,200,{challenge,rpId:new URL(origin).hostname,timeout:PK_TTL,userVerification:'required'});
+    }
+    if(p==='/api/passkeys/login'&&req.method==='POST'){
+      const origin=pkOrigin(req),ip=NET.info(req).client;if(!origin)return fail(res,400,'As passkeys só funcionam no endereço seguro da casa.');
+      let st=LIM.ip.status('login:'+ip);if(st.blocked)return tooMany(res,st);
+      const cred=b.credential||{};const ch=pkTake(pkChallengeOf(cred));const credId=String(cred.id||'').slice(0,1400);
+      const u=db.people.find(x=>pkList(x).some(k=>k.id===credId));const stored=u&&pkList(u).find(k=>k.id===credId);
+      let result=null;
+      if(ch&&ch.type==='login'&&ch.origin===origin&&stored){try{result=WA.verifyAssertion({credential:cred,challenge:pkChallengeOf(cred),origins:[origin],rpId:new URL(origin).hostname,stored});}catch{result=null;}}
+      if(!result){const a=LIM.ip.fail('login:'+ip);if(a.blocked)return tooMany(res,a);return fail(res,401,'Não foi possível entrar com esta passkey. Usa o email e a palavra-passe.');}
+      if(!isActive(u))return fail(res,403,'Esta conta foi desativada. Fala com o administrador da casa.');
+      if(!scheduleAllows(u))return fail(res,403,'O teu acesso está disponível apenas em: '+scheduleText(u)+'.');
+      stored.counter=result.counter;stored.lastUsedAt=new Date().toISOString();save();
+      LIM.ip.success('login:'+ip);
+      return send(res,200,{user:{id:u.id,name:u.name,role:u.role,mustChangePassword:!!u.mustChangePassword}},{'Set-Cookie':cookie(req,session(u,true),true)});
     }
     if(p==='/api/logout'&&req.method==='POST')return send(res,200,{ok:true},{'Set-Cookie':cookie(req,'')});
     // Recuperar a palavra-passe: código de 6 dígitos enviado por email (se o envio estiver configurado nas opções do add-on)
@@ -402,6 +432,34 @@ const server=http.createServer(async (req,res)=>{
     }
     const user=readUser(req);if(!user)return fail(res,401,'Inicia sessão para continuar.');
     {const op=String(req.headers['x-op-id']||'');if(op&&req.method!=='GET'&&/^[A-Za-z0-9_-]{8,64}$/.test(op)){const key=user.id+':'+op;const done=opsGet(key);if(done){res.writeHead(done.s,{'Content-Type':'application/json; charset=utf-8','Cache-Control':'no-store','X-Content-Type-Options':'nosniff','X-Op-Replayed':'1'});return res.end(done.b);}res.__opKey=key;}}
+    // 3.23: passkeys da própria pessoa. Para acrescentar uma, pede-se a palavra-passe, exceto nos 10 minutos a seguir a entrar.
+    if(p==='/api/passkeys'&&req.method==='GET')return send(res,200,{available:!!pkOrigin(req),rpId:pkOrigin(req)?new URL(pkOrigin(req)).hostname:'',passkeys:pkList(user).map(pkView)});
+    if(p==='/api/passkeys/register/options'&&req.method==='POST'){
+      const origin=pkOrigin(req);if(!origin)return fail(res,400,'As passkeys só funcionam no endereço seguro da casa (HTTPS).');
+      const recent=(Date.now()-(recentLogin.get(user.id)||0))<10*60_000;
+      if(!recent&&!verifyPw(String(b.currentPassword||'').slice(0,200),user.passwordHash))return fail(res,403,'Confirma a tua palavra-passe para ativar.');
+      if(pkList(user).length>=10)return fail(res,400,'Já tens 10 passkeys. Remove uma antes de acrescentar outra.');
+      const rpId=new URL(origin).hostname;const challenge=pkPut({type:'register',origin,userId:user.id});
+      return send(res,200,{challenge,rp:{id:rpId,name:'Daily Casa'},user:{id:WA.b64u(Buffer.from(user.id)),name:user.email||user.username||user.name,displayName:user.name},
+        pubKeyCredParams:[{type:'public-key',alg:-7},{type:'public-key',alg:-8},{type:'public-key',alg:-257}],timeout:PK_TTL,attestation:'none',
+        authenticatorSelection:{residentKey:'required',requireResidentKey:true,userVerification:'required'},
+        excludeCredentials:pkList(user).filter(k=>k.rpId===rpId).map(k=>({type:'public-key',id:k.id}))});
+    }
+    if(p==='/api/passkeys/register'&&req.method==='POST'){
+      const origin=pkOrigin(req);if(!origin)return fail(res,400,'As passkeys só funcionam no endereço seguro da casa (HTTPS).');
+      const cred=b.credential||{};const chal=pkChallengeOf(cred);const ch=pkTake(chal);
+      if(!ch||ch.type!=='register'||ch.userId!==user.id||ch.origin!==origin)return fail(res,400,'O pedido expirou. Tenta outra vez.');
+      let r;try{r=WA.verifyRegistration({credential:cred,challenge:chal,origins:[origin],rpId:new URL(origin).hostname});}catch(e){return fail(res,400,'Não foi possível ativar: '+e.message+'.');}
+      if(db.people.some(x=>pkList(x).some(k=>k.id===r.id)))return fail(res,409,'Esta passkey já está registada.');
+      const name=cleanStr(b.name,60)||'Passkey';const pk={id:r.id,publicKey:r.publicKey,alg:r.alg,counter:r.counter,transports:r.transports,rpId:new URL(origin).hostname,name,createdAt:new Date().toISOString(),lastUsedAt:''};
+      user.passkeys=[...pkList(user),pk];save();return send(res,200,{passkey:pkView(pk)});
+    }
+    {const m=p.match(/^\/api\/passkeys\/([A-Za-z0-9_-]{8,1400})$/);
+     if(m&&req.method==='DELETE'){const before=pkList(user).length;user.passkeys=pkList(user).filter(k=>k.id!==m[1]);if(user.passkeys.length===before)return fail(res,404,'Passkey não encontrada.');save();return send(res,200,{ok:true});}
+     if(m&&req.method==='PATCH'){const k=pkList(user).find(x=>x.id===m[1]);if(!k)return fail(res,404,'Passkey não encontrada.');k.name=cleanStr(b.name,60)||k.name;save();return send(res,200,{passkey:pkView(k)});}}
+    // O administrador pode remover todas as passkeys de alguém (por exemplo, telemóvel perdido).
+    {const m=p.match(/^\/api\/people\/([^/]+)\/passkeys$/);
+     if(m&&req.method==='DELETE'){if(roleOf(user)!=='admin')return fail(res,403,'Sem permissão.');const t=db.people.find(x=>x.id===m[1]);if(!t)return fail(res,404,'Pessoa não encontrada.');const n=pkList(t).length;t.passkeys=[];save();return send(res,200,{removed:n});}}
     // Notificações push neste dispositivo (3.3).
     // 3.11: meteorologia da casa.
     if(p==='/api/weather'&&req.method==='GET')return send(res,200,{weather:WEATHER.view(elevated(user))});

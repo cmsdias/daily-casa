@@ -2379,3 +2379,15 @@ main.main:focus{outline:none}
 .pw-rules.touched li:not(.ok){color:#a33d31}
 .pw-rules li.ok{color:#2f7a4f}
 .pw-rules li.ok svg{opacity:1}
+
+/* 3.23 · Passkeys (Face ID, impressão digital) */
+.pk-login{display:grid;gap:12px;margin-top:12px}
+.pk-or{display:flex;align-items:center;gap:12px;color:var(--muted);font-size:12px}
+.pk-or::before,.pk-or::after{content:"";flex:1;height:1px;background:#e0e6dd}
+.pk-login-btn{width:100%;justify-content:center;min-height:48px}
+.pk-section{display:grid;gap:10px;margin:18px 0;padding:16px;border:1px solid #e0e6dd;border-radius:16px}
+.pk-section h3{margin:0;font-size:15px}
+.pk-list{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.pk-list li{display:flex;align-items:center;gap:12px;justify-content:space-between}
+.pk-list li div{display:grid;min-width:0}
+.pk-list small{color:var(--muted);font-size:12px}
