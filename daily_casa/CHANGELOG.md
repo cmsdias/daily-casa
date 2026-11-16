@@ -1,3 +1,8 @@
+# 3.23.1 — Passkeys também quando o túnel não passa pelo proxy reconhecido
+
+- As passkeys ficavam indisponíveis quando o túnel da Cloudflare chegava à app por um caminho que não é o do proxy reconhecido (por exemplo, a rota `http://homeassistant:3000`). Agora a app usa o nome de domínio do pedido. É seguro, porque o browser só assina para o domínio que está realmente aberto e só em HTTPS.
+- Em endereços locais (IP da rede de casa, `.local`) continua a pedir só a palavra-passe.
+
 # 3.23.0 — Entrar com Face ID ou impressão digital
 
 - Passkeys: entrar sem escrever a palavra-passe, com Face ID ou Touch ID no iPhone e com impressão digital ou rosto no Android. Conta como dois fatores (o telemóvel e a cara ou o dedo) e não pode ser apanhada por sites falsos.
