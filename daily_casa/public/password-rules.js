@@ -5,7 +5,7 @@
  */
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.PasswordRules=api;})(typeof self!=='undefined'?self:this,function(){
 'use strict';
-const MIN=10,MAX=128;
+const MIN=8,MAX=128;
 // Palavras muito usadas (comparadas sem acentos, sem símbolos e sem os números do fim: «Benfica2024!» conta como «benfica»).
 const COMMON=new Set(('password passw0rd palavrapasse senha minhasenha contrasena segredo secreto privado qwerty qwertz azerty asdfgh zxcvbn '+
  'admin administrador administrator root user utilizador login welcome bemvindo bemvinda letmein iloveyou amoteamo teamo amor meuamor '+
