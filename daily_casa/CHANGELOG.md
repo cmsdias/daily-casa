@@ -1,3 +1,12 @@
+# 3.23.0 — Entrar com Face ID ou impressão digital
+
+- Passkeys: entrar sem escrever a palavra-passe, com Face ID ou Touch ID no iPhone e com impressão digital ou rosto no Android. Conta como dois fatores (o telemóvel e a cara ou o dedo) e não pode ser apanhada por sites falsos.
+- No ecrã de entrada aparece «Entrar com Face ID ou Touch ID» (ou «impressão digital ou rosto» no Android).
+- Depois de entrar com a palavra-passe, a app oferece ativar a passkey, uma vez por dispositivo. Também se ativa e remove no perfil, em «Face ID e impressão digital».
+- O administrador pode remover as passkeys de alguém que perdeu o telemóvel (Pessoas › editar › Acesso e conta).
+- Só funciona no endereço público da casa, em HTTPS. Dentro do Home Assistant continua a entrar-se com a palavra-passe.
+- A cara e o dedo nunca saem do dispositivo; o servidor só guarda uma chave pública. Sem dependências externas.
+
 # 3.22.1 — Palavra-passe com mínimo de 8 caracteres
 
 - O comprimento mínimo das novas palavras-passe passa de 10 para 8 caracteres. Mantém-se a recusa de palavras-passe comuns, previsíveis ou com o nome ou o email da pessoa.
