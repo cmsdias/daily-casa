@@ -21,7 +21,12 @@ const WA=require('./lib/webauthn.js');
 // 3.23: passkeys (Face ID, Touch ID, impressão digital). Só no endereço público em HTTPS (ou em localhost, para testes),
 // porque cada passkey fica ligada ao domínio. Os desafios vivem em memória durante 5 minutos e servem uma única vez.
 const PK_TTL=5*60_000,pkChallenges=new Map(),recentLogin=new Map();
-function pkOrigin(req){const n=NET.info(req);if(n.origin)return n.origin;const h=String(req.headers.host||'').toLowerCase();return /^localhost(:\d{1,5})?$/.test(h)?'http://'+h:'';}
+// A origem esperada vem do proxy reconhecido ou, se o túnel chegar por outro caminho, do nome de domínio do pedido.
+// É seguro: o browser só assina para o domínio que está realmente aberto (e só em HTTPS), por isso um cabeçalho Host falso não serve de nada.
+function pkOrigin(req){const n=NET.info(req);if(n.origin)return n.origin;const h=String(req.headers.host||'').trim().toLowerCase();
+ if(/^localhost(:\d{1,5})?$/.test(h))return 'http://'+h;
+ if(/^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?(?:\.[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)*\.[a-z]{2,63}$/.test(h)&&!/\.(local|lan|home|internal|arpa)$/.test(h))return 'https://'+h;
+ return '';}
 function pkPut(data){const now=Date.now();for(const [k,v] of pkChallenges)if(v.exp<now)pkChallenges.delete(k);if(pkChallenges.size>500)pkChallenges.delete(pkChallenges.keys().next().value);const c=WA.newChallenge();pkChallenges.set(c,{...data,exp:now+PK_TTL});return c;}
 function pkTake(challengeB64){const v=pkChallenges.get(challengeB64);pkChallenges.delete(challengeB64);return v&&v.exp>=Date.now()?v:null;}
 const pkChallengeOf=cred=>{try{return JSON.parse(Buffer.from(String(cred?.response?.clientDataJSON||''),'base64url').toString('utf8')).challenge||'';}catch{return '';}};
