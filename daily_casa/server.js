@@ -303,6 +303,9 @@ function staticFile(req,res,pathname){let decoded;try{decoded=decodeURIComponent
 const server=http.createServer(async (req,res)=>{
   let url;try{url=new URL(req.url,'http://localhost');}catch{return fail(res,400,'URL inválido.');}
   const p=url.pathname;
+  // 3.24.2: a app é privada; pede-se aos motores de pesquisa e analisadores que não a indexem nem guardem cópias.
+  res.setHeader('X-Robots-Tag','noindex, nofollow, noarchive, nosnippet, noimageindex');
+  if(p==='/robots.txt'&&(req.method==='GET'||req.method==='HEAD')){res.writeHead(200,{'Content-Type':'text/plain; charset=utf-8','Cache-Control':'public, max-age=86400'});return res.end(req.method==='HEAD'?undefined:'User-agent: *\nDisallow: /\n');}
   if(p==='/health'){return send(res,200,{ok:true});}
   {const o=NET.info(req).origin;if(o&&db.settings&&db.settings.publicUrlAuto!==o&&db.people.length){db.settings.publicUrlAuto=o;save();}}
   if(!p.startsWith('/api/')){if(req.method!=='GET')return fail(res,405,'Método não permitido.');return staticFile(req,res,p);}

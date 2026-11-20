@@ -1,3 +1,7 @@
+# 3.24.2 — A app deixa de poder ser indexada
+
+- Todas as respostas levam o cabeçalho `X-Robots-Tag: noindex, nofollow, noarchive, nosnippet, noimageindex`. Há um `robots.txt` que pede para não visitar nada e a página tem a meta `robots`. Os motores de pesquisa e os analisadores que respeitam estas indicações deixam de listar ou guardar o ecrã de entrada.
+
 # 3.24.1 — Motivo da recusa do Turnstile no registo
 
 - Quando a Cloudflare recusa uma verificação, o registo do add-on passa a mostrar o motivo (por exemplo, chave secreta errada ou token expirado). A chave e o token não aparecem no registo.
