@@ -98,6 +98,7 @@ const TS=require('./lib/turnstile').createTurnstile({getOptions:()=>({turnstile_
 // Turnstile: confirma o token antes de tratar o pedido; devolve true se o pedido já foi respondido com erro.
 async function turnstileBlocked(req,res,b,action){const n=NET.info(req);if(!TS.required(req,n))return false;
  const v=await TS.verify(b.turnstileToken,{ip:n.client,action});if(v.ok)return false;
+ console.warn('Turnstile recusado ('+action+'): '+v.codes.join(', ')+(v.codes.includes('invalid-input-secret')?' — a chave secreta nas opções do add-on não corresponde ao widget.':v.codes.includes('timeout-or-duplicate')?' — token expirado ou já usado.':''));
  fail(res,400,v.codes.includes('timeout')||v.codes.includes('network-error')?'Não foi possível confirmar a verificação de segurança. Tenta outra vez dentro de momentos.':'Confirma a verificação de segurança e tenta outra vez.');return true;}
 const MAILER=MAIL.createMailer({getOptions:()=>({...addonOptions(),...(process.env.SMTP_USER?{email_remetente:process.env.SMTP_USER,email_palavra_passe:process.env.SMTP_PASS}:{})}),host:process.env.SMTP_HOST||'smtp.gmail.com',port:+(process.env.SMTP_PORT||465),secure:process.env.SMTP_SECURE!=='0'});
 // Por IP: 10 falhas em 15 min bloqueiam 15 min (a duplicar a cada reincidência, até 24 h). Por conta: 20 falhas numa hora, de qualquer IP, bloqueiam 30 min.
