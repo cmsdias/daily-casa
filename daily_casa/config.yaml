@@ -1,7 +1,7 @@
 name: "Daily Casa"
 slug: "daily_casa"
 description: "Tarefas e rotinas domésticas partilhadas"
-version: "3.23.2"
+version: "3.24.0"
 arch:
   - aarch64
   - amd64
@@ -25,11 +25,17 @@ homeassistant_api: true
 hassio_api: true
 # Recuperação da palavra-passe por email (opcional). Conta Gmail com verificação em dois passos e uma
 # «palavra-passe de aplicação» (myaccount.google.com/apppasswords). A palavra-passe fica só nas opções do add-on.
+# Cloudflare Turnstile (opcional): verificação anti-robô no login e na recuperação, só nos acessos pelo túnel.
+# A chave do site é pública; a chave secreta fica só aqui. Sem chave secreta, a verificação fica desligada.
 options:
   email_remetente: ""
   email_palavra_passe: ""
   email_nome: "Daily Casa"
+  turnstile_site_key: "0x4AAAAAAGKYP9jYgOfbYvge"
+  turnstile_secret: ""
 schema:
   email_remetente: "str"
   email_palavra_passe: "password"
   email_nome: "str"
+  turnstile_site_key: "str?"
+  turnstile_secret: "password?"
