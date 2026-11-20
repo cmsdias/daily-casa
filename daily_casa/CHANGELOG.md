@@ -1,3 +1,8 @@
+# 3.23.2 — Sino centrado no cabeçalho
+
+- O desenho do sino estava 1,5 px abaixo do centro do botão (ia de y=4,1 a y=23,4 numa caixa de 24). Foi subido 1,5 unidades e fica agora centrado como a pesquisa e o atualizar (desvio de 0,2 px), com e sem contador, no computador e no iPhone.
+- O contador não ocupa espaço: está posicionado por cima do botão e não desloca o ícone.
+
 # 3.23.1 — Passkeys também quando o túnel não passa pelo proxy reconhecido
 
 - As passkeys ficavam indisponíveis quando o túnel da Cloudflare chegava à app por um caminho que não é o do proxy reconhecido (por exemplo, a rota `http://homeassistant:3000`). Agora a app usa o nome de domínio do pedido. É seguro, porque o browser só assina para o domínio que está realmente aberto e só em HTTPS.
