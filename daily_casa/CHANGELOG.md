@@ -1,3 +1,7 @@
+# 3.24.1 — Motivo da recusa do Turnstile no registo
+
+- Quando a Cloudflare recusa uma verificação, o registo do add-on passa a mostrar o motivo (por exemplo, chave secreta errada ou token expirado). A chave e o token não aparecem no registo.
+
 # 3.24.0 — Verificação anti-robô (Cloudflare Turnstile) no login e na recuperação
 
 - O login, o pedido de código de recuperação e a reposição da palavra-passe passam a exigir a verificação Turnstile da Cloudflare, mas só nos acessos que chegam pelo túnel (de fora de casa). Em casa e dentro do Home Assistant nada muda.
