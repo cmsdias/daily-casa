@@ -94,6 +94,11 @@ migrate();save();
 const {createNet}=require('./lib/net');const {createLimiter,createRateLimiter,waitText}=require('./lib/ratelimit');const MAIL=require('./lib/mailer');
 function addonOptions(){try{return JSON.parse(fs.readFileSync(path.join(DATA_DIR,'options.json'),'utf8'))||{};}catch{return {};}}
 const NET=createNet({trusted:(process.env.TRUSTED_PROXIES||'172.30.33.0/24').split(',')});
+const TS=require('./lib/turnstile').createTurnstile({getOptions:()=>({turnstile_site_key:process.env.TURNSTILE_SITE_KEY||addonOptions().turnstile_site_key,turnstile_secret:process.env.TURNSTILE_SECRET||addonOptions().turnstile_secret})});
+// Turnstile: confirma o token antes de tratar o pedido; devolve true se o pedido já foi respondido com erro.
+async function turnstileBlocked(req,res,b,action){const n=NET.info(req);if(!TS.required(req,n))return false;
+ const v=await TS.verify(b.turnstileToken,{ip:n.client,action});if(v.ok)return false;
+ fail(res,400,v.codes.includes('timeout')||v.codes.includes('network-error')?'Não foi possível confirmar a verificação de segurança. Tenta outra vez dentro de momentos.':'Confirma a verificação de segurança e tenta outra vez.');return true;}
 const MAILER=MAIL.createMailer({getOptions:()=>({...addonOptions(),...(process.env.SMTP_USER?{email_remetente:process.env.SMTP_USER,email_palavra_passe:process.env.SMTP_PASS}:{})}),host:process.env.SMTP_HOST||'smtp.gmail.com',port:+(process.env.SMTP_PORT||465),secure:process.env.SMTP_SECURE!=='0'});
 // Por IP: 10 falhas em 15 min bloqueiam 15 min (a duplicar a cada reincidência, até 24 h). Por conta: 20 falhas numa hora, de qualquer IP, bloqueiam 30 min.
 // Recuperação: 5 pedidos em 15 min por IP e por email.
@@ -293,7 +298,7 @@ function trackShopping(item){const key=item.title.toLocaleLowerCase('pt-PT').tri
 function untrackShopping(title){const key=String(title||'').toLocaleLowerCase('pt-PT').trim();const f=db.shoppingFreq[key];if(!f)return;f.count=(f.count||1)-1;if(f.count<=0)delete db.shoppingFreq[key];}
 function knownCategory(title){return db.shoppingFreq[String(title).toLocaleLowerCase('pt-PT').trim()]?.category||'';}
 const TYPES={'.html':'text/html; charset=utf-8','.js':'application/javascript; charset=utf-8','.css':'text/css; charset=utf-8','.json':'application/json; charset=utf-8','.webmanifest':'application/manifest+json; charset=utf-8','.svg':'image/svg+xml','.png':'image/png','.woff2':'font/woff2','.txt':'text/plain; charset=utf-8'};
-function staticFile(req,res,pathname){let decoded;try{decoded=decodeURIComponent(pathname);}catch{return fail(res,400,'URL inválido.');}if(decoded.includes('\0'))return fail(res,400,'URL inválido.');const relative=pathname==='/'?'index.html':decoded.replace(/^\/+/, '');const file=path.resolve(WEB,relative);if(!file.startsWith(WEB+path.sep))return fail(res,403,'Acesso negado.');if(!fs.existsSync(file)||!fs.statSync(file).isFile())return fail(res,404,'Não encontrado.');const ext=path.extname(file);const contents=fs.readFileSync(file);res.writeHead(200,{'Content-Type':TYPES[ext]||'application/octet-stream','Content-Length':contents.length,'Cache-Control':['.html','.js','.css','.webmanifest'].includes(ext)?'no-cache, must-revalidate':'public, max-age=3600','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; connect-src 'self'; img-src 'self' data: blob:; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'self'"});res.end(contents);}
+function staticFile(req,res,pathname){let decoded;try{decoded=decodeURIComponent(pathname);}catch{return fail(res,400,'URL inválido.');}if(decoded.includes('\0'))return fail(res,400,'URL inválido.');const relative=pathname==='/'?'index.html':decoded.replace(/^\/+/, '');const file=path.resolve(WEB,relative);if(!file.startsWith(WEB+path.sep))return fail(res,403,'Acesso negado.');if(!fs.existsSync(file)||!fs.statSync(file).isFile())return fail(res,404,'Não encontrado.');const ext=path.extname(file);const contents=fs.readFileSync(file);res.writeHead(200,{'Content-Type':TYPES[ext]||'application/octet-stream','Content-Length':contents.length,'Cache-Control':['.html','.js','.css','.webmanifest'].includes(ext)?'no-cache, must-revalidate':'public, max-age=3600','X-Content-Type-Options':'nosniff','Content-Security-Policy':"default-src 'self'; connect-src 'self' https://challenges.cloudflare.com; img-src 'self' data: blob:; font-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' https://challenges.cloudflare.com; frame-src https://challenges.cloudflare.com; object-src 'none'; base-uri 'self'; frame-ancestors 'self'"});res.end(contents);}
 const server=http.createServer(async (req,res)=>{
   let url;try{url=new URL(req.url,'http://localhost');}catch{return fail(res,400,'URL inválido.');}
   const p=url.pathname;
@@ -310,7 +315,7 @@ const server=http.createServer(async (req,res)=>{
   const bodyLimit=p==='/api/backups/upload'?30_000_000:/^\/api\/incidents\/[^/]+\/photos$/.test(p)?3_000_000:/^\/api\/equipment\/[^/]+\/docs$/.test(p)?12_000_000:/^\/api\/tasks\/[^/]+\/photos$/.test(p)?3_000_000:256_000;
   let b={};if(req.method!=='GET')try{b=await parseBody(req,bodyLimit);}catch(e){return fail(res,400,e.message);}
   try{
-    if(p==='/api/bootstrap'&&req.method==='GET')return send(res,200,{passkeys:!!pkOrigin(req),setup:db.people.length===0,publicUrl:publicUrl(),mail:MAILER.status().configured,user:(()=>{const u=readUser(req);return u?{id:u.id,name:u.name,role:u.role,mustChangePassword:!!u.mustChangePassword}:null;})()});
+    if(p==='/api/bootstrap'&&req.method==='GET')return send(res,200,{turnstile:TS.siteKeyFor(req,NET.info(req)),passkeys:!!pkOrigin(req),setup:db.people.length===0,publicUrl:publicUrl(),mail:MAILER.status().configured,user:(()=>{const u=readUser(req);return u?{id:u.id,name:u.name,role:u.role,mustChangePassword:!!u.mustChangePassword}:null;})()});
     if(p==='/api/setup'&&req.method==='POST'){
       if(db.people.length)return fail(res,409,'Aplicação já configurada.');
       const name=cleanStr(b.name,80),password=String(b.password||'');let email;try{email=cleanEmail(b.email);}catch(e){return fail(res,400,e.message);}
@@ -322,6 +327,7 @@ const server=http.createServer(async (req,res)=>{
     if(p==='/api/login'&&req.method==='POST'){
       const username=cleanStr(b.email||b.username,120).toLowerCase();const ip=NET.info(req).client;
       let st=LIM.ip.status('login:'+ip);if(st.blocked)return tooMany(res,st);
+      if(await turnstileBlocked(req,res,b,'login'))return;
       st=LIM.account.status(username);if(st.blocked)return tooMany(res,st);
       const u=findByLogin(username);
       // Verifica sempre uma palavra-passe (mesmo para utilizadores inexistentes) para não revelar contas pelo tempo de resposta.
@@ -363,6 +369,7 @@ const server=http.createServer(async (req,res)=>{
     if(p==='/api/password/forgot'&&req.method==='POST'){
       const email=cleanStr(b.email,120).toLowerCase(),ip=NET.info(req).client;
       for(const k of ['ip:'+ip,'acct:'+email]){const st=LIM.reset.status(k);if(st.blocked)return tooMany(res,st);}
+      if(await turnstileBlocked(req,res,b,'recover'))return;
       LIM.reset.fail('ip:'+ip);LIM.reset.fail('acct:'+email);
       const u=findByLogin(email);
       if(u&&isActive(u)&&u.email){const code=String(crypto.randomInt(0,1e6)).padStart(6,'0');resetCodes.set(u.id,{hash:crypto.createHash('sha256').update(u.id+':'+code).digest('hex'),exp:Date.now()+15*60_000,tries:0});
@@ -377,6 +384,7 @@ const server=http.createServer(async (req,res)=>{
     if(p==='/api/password/reset'&&req.method==='POST'){
       const email=cleanStr(b.email,120).toLowerCase(),ip=NET.info(req).client;
       for(const k of ['ip:'+ip,'acct:'+email]){const st=LIM.reset.status(k);if(st.blocked)return tooMany(res,st);}
+      if(await turnstileBlocked(req,res,b,'recover'))return;
       const u=findByLogin(email);const rc=u&&resetCodes.get(u.id);
       const pw=String(b.password||'');if(pw.length<8)return fail(res,400,'A nova palavra-passe deve ter pelo menos 8 caracteres.');
       {const pe=pwProblem(pw,u||{email});if(pe)return fail(res,400,pe);}

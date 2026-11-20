@@ -8,5 +8,11 @@ configuration:
   email_nome:
     name: Nome do remetente
     description: Nome que aparece como remetente dos emails.
+  turnstile_site_key:
+    name: Turnstile — chave do site
+    description: Chave pública do widget Turnstile da Cloudflare (painel Cloudflare › Turnstile). Já vem preenchida.
+  turnstile_secret:
+    name: Turnstile — chave secreta
+    description: Chave secreta do mesmo widget. Com ela preenchida, o login e a recuperação da palavra-passe pedem a verificação anti-robô quando se entra pelo túnel (de fora de casa). Deixe em branco para desligar.
 network:
   3000/tcp: Acesso direto na rede de casa e para o Cloudflare Tunnel. Deixe em branco para desligar.

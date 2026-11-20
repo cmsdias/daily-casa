@@ -1,3 +1,11 @@
+# 3.24.0 — Verificação anti-robô (Cloudflare Turnstile) no login e na recuperação
+
+- O login, o pedido de código de recuperação e a reposição da palavra-passe passam a exigir a verificação Turnstile da Cloudflare, mas só nos acessos que chegam pelo túnel (de fora de casa). Em casa e dentro do Home Assistant nada muda.
+- O token é confirmado no servidor junto da Cloudflare antes de tratar o pedido. Serve uma vez e tem de corresponder à ação (login ou recuperação). Se a Cloudflare não responder, o pedido é recusado.
+- Novas opções do add-on: `turnstile_site_key` (já preenchida) e `turnstile_secret` (palavra-passe). Sem a chave secreta, a verificação fica desligada.
+- Normalmente não aparece nada: o widget só se mostra se a Cloudflare precisar de interação. O token fica pronto enquanto se escreve.
+- A política de segurança de conteúdo passa a permitir só o domínio `challenges.cloudflare.com`, para o widget. O service worker deixa de intercetar pedidos de outros domínios.
+
 # 3.23.2 — Sino centrado no cabeçalho
 
 - O desenho do sino estava 1,5 px abaixo do centro do botão (ia de y=4,1 a y=23,4 numa caixa de 24). Foi subido 1,5 unidades e fica agora centrado como a pesquisa e o atualizar (desvio de 0,2 px), com e sem contador, no computador e no iPhone.

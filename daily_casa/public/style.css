@@ -2391,3 +2391,7 @@ main.main:focus{outline:none}
 .pk-list li{display:flex;align-items:center;gap:12px;justify-content:space-between}
 .pk-list li div{display:grid;min-width:0}
 .pk-list small{color:var(--muted);font-size:12px}
+
+/* 3.24 · Verificação Turnstile (só aparece se a Cloudflare pedir interação) */
+.ts-box{display:flex;justify-content:center;margin:4px 0 2px}
+.ts-box:empty{display:none}

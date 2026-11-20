@@ -8,5 +8,11 @@ configuration:
   email_nome:
     name: Sender name
     description: Name shown as the sender of the emails.
+  turnstile_site_key:
+    name: Turnstile site key
+    description: Public key of the Cloudflare Turnstile widget (Cloudflare dashboard › Turnstile). Pre-filled.
+  turnstile_secret:
+    name: Turnstile secret key
+    description: Secret key of the same widget. When set, login and password recovery require the anti-bot check for requests arriving through the tunnel (from outside the home). Leave empty to disable.
 network:
   3000/tcp: Direct access on the home network and for Cloudflare Tunnel. Leave empty to disable.
